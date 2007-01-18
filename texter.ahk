@@ -7,24 +7,79 @@
 ; Script Function:
 ;	Creates easy auto-replacing hotstrings for repetitive text
 ;
+
 #SingleInstance,Force 
 #NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
 SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
+SetKeyDelay,0 
+SetWinDelay,0 
 SetWorkingDir, %A_ScriptDir%
-ArrayCount = 0
-One = 1
-Hotkeys%One% = "Hi"
-TabKeys = ""
 FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
 MsgBox, %EnterKeys%
 FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; this section is dabbling with the hotkey replacement of RCtrl
+Hotkey,$Tab,FIRE
+Hotkey,$Enter,FIRE
+Goto, Start
+
+FIRE:
+StringTrimLeft,hotkey,A_ThisHotkey,1
+;StringLen,hotkeyl,hotkey 
+;MsgBox %A_ThisHotkey%
+;If hotkeyl>1 
+hotkey=`{%hotkey%`} 
+Send,{RCtrl} 
+;Send, {%A_ThisHotkey%}
+;MsgBox %hotkey%!
+Return
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 START:
-hotkey = 
-Input,input,V L10, {Enter}{Tab}{Space}
+;hotkey = 
+Input,input,V L10,{RCtrl}
+
+if hotkey = `{Tab`}
+{
+	;MsgBox Tab!
+	if input in %TabKeys%
+	{
+		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+		;MsgBox, %ReplacementText%
+		GoSub, Execute
+	}
+	else 
+	{
+		Send,%hotkey%
+	}
+}
+
+if hotkey = `{Enter`}
+{
+	;MsgBox Enter!
+	if input in %EnterKeys%
+	{
+		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+		;MsgBox, %ReplacementText%
+		GoSub, Execute
+	}
+	else 
+	{
+		Send,%hotkey%
+	}
+}
+
 if ErrorLevel = Max
 {
-    ;MsgBox, You entered "%UserInput%", which is the maximum length of text.
+    Goto, Start
     return
+}
+if ErrorLevel = EndKey:RCtrl
+{
+	MsgBox, You hit Ctrl
 }
 
 if ErrorLevel = EndKey:Enter
@@ -57,7 +112,7 @@ if ErrorLevel = EndKey:Space
 	GoSub, Start
 }
 
-GoSub, START
+Goto, START
 
 EXECUTE:
 StringLen,BSlength,input
