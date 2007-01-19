@@ -15,40 +15,42 @@ SetKeyDelay,0
 SetWinDelay,0 
 SetWorkingDir, %A_ScriptDir%
 FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
-MsgBox, %EnterKeys%
 FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; this section is dabbling with the hotkey replacement of RCtrl
 Hotkey,$Tab,FIRE
 Hotkey,$Enter,FIRE
+Hotkey,$Space,FIRE
 Goto, Start
 
 FIRE:
 StringTrimLeft,hotkey,A_ThisHotkey,1
-;StringLen,hotkeyl,hotkey 
-;MsgBox %A_ThisHotkey%
 ;If hotkeyl>1 
 hotkey=`{%hotkey%`} 
 Send,{RCtrl} 
-;Send, {%A_ThisHotkey%}
-;MsgBox %hotkey%!
 Return
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 START:
 ;hotkey = 
-Input,input,V L10,{RCtrl}
+Input,input,V L99,{RCtrl}
 
 if hotkey = `{Tab`}
 {
-	;MsgBox Tab!
 	if input in %TabKeys%
 	{
-		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
-		;MsgBox, %ReplacementText%
+		GoSub, Execute
+	}
+	else 
+	{
+		Send,%hotkey%
+	}
+}
+else if hotkey = `{Enter`}
+{
+	if input in %EnterKeys%
+	{
 		GoSub, Execute
 	}
 	else 
@@ -57,19 +59,10 @@ if hotkey = `{Tab`}
 	}
 }
 
-if hotkey = `{Enter`}
+else
 {
-	;MsgBox Enter!
-	if input in %EnterKeys%
-	{
-		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
-		;MsgBox, %ReplacementText%
-		GoSub, Execute
-	}
-	else 
-	{
-		Send,%hotkey%
-	}
+	Send,%hotkey%
+	Goto, Start
 }
 
 if ErrorLevel = Max
@@ -77,46 +70,14 @@ if ErrorLevel = Max
     Goto, Start
     return
 }
-if ErrorLevel = EndKey:RCtrl
-{
-	MsgBox, You hit Ctrl
-}
-
-if ErrorLevel = EndKey:Enter
-{
-	;MsgBox, You hit Enter after %input%
-	if input in %EnterKeys%
-	{
-		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
-		;MsgBox, %ReplacementText%
-		Send {BS}
-		GoSub, Execute
-	}
-	GoSub, Start
-}
-
-if ErrorLevel = EndKey:Tab
-{
-	;MsgBox, You hit Enter after %input%
-	if input in %TabKeys%
-	{
-		FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
-		;MsgBox, %ReplacementText%
-		Send {BS}
-		GoSub, Execute
-	}
-	GoSub, Start
-}
-if ErrorLevel = EndKey:Space
-{
-	GoSub, Start
-}
 
 Goto, START
 
 EXECUTE:
+FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+;MsgBox, %ReplacementText%
+;Send {BS}
 StringLen,BSlength,input
 Send {BS %BSlength%}
 Send %ReplacementText%
-;MsgBox, You need to backspace %Backspace% times.
 return
