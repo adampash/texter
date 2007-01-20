@@ -46,7 +46,7 @@ Gui, Add, Checkbox, vEnterCbox yp xp+75, Enter
 Gui, Add, Checkbox, vTabCbox yp xp+60, Tab
 Gui, Add, Checkbox, vSpaceCbox yp xp+60, Space
 Gui, Add, Button,w80 default,&OK
-Gui, Add, Button,w80 xp+100 default,&Cancel
+Gui, Add, Button,w80 xp+100 GButtonCancel,&Cancel
 Gui, Show, W500 H200
 return
 
@@ -63,17 +63,17 @@ If RString<>
 		IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
 		{
 			FileAppend,%FullText%, %A_WorkingDir%\replacements\%RString%.txt
-			if EnterCbox<> 
+			if EnterCbox = 1 
 			{
 				FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\enter.csv
 				FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
 			}
-			if TabCbox<>
+			if TabCbox = 1
 			{
 			FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\tab.csv
 			FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
 			}
-			if SpaceCbox<>
+			if SpaceCbox = 1
 			{
 			FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\space.csv
 			FileRead, SpaceKeys, %A_WorkingDir%\replacements\space.csv
