@@ -16,7 +16,7 @@ SetWinDelay,0
 SetWorkingDir, %A_ScriptDir%
 FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
-
+FileRead, SpaceKeys, %A_WorkingDir%\replacements\space.csv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; this section is dabbling with the hotkey replacement of RCtrl
 Hotkey,$Tab,FIRE
@@ -118,8 +118,18 @@ else if hotkey = `{Enter`}
 	{
 		Send,%hotkey%
 	}
+} 
+else if hotkey = `{Space`}
+{
+	if input in %SpaceKeys%
+	{
+		GoSub, Execute
+	}
+	else 
+	{
+		Send,%hotkey%
+	}
 }
-
 else
 {
 	Send,%hotkey%
@@ -135,10 +145,11 @@ if ErrorLevel = Max
 Goto, START
 
 EXECUTE:
+SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 ;MsgBox, %ReplacementText%
 ;Send {BS}
 StringLen,BSlength,input
 Send {BS %BSlength%}
-Send %ReplacementText%
+Send, %ReplacementText%
 return
