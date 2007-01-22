@@ -23,7 +23,6 @@ Hotkey,$Tab,FIRE
 Hotkey,$Enter,FIRE
 Hotkey,$Space,FIRE
 Hotkey,^+h,NEWKEY
-Hotkey,^+y,TESTY
 
 Goto, Start
 
@@ -62,22 +61,30 @@ If RString<>
 	{
 		IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
 		{
-			FileAppend,%FullText%, %A_WorkingDir%\replacements\%RString%.txt
 			if EnterCbox = 1 
 			{
 				FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
 				FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 			}
 			if TabCbox = 1
 			{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
-			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+				FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
+				FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+				IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+					FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 			}
 			if SpaceCbox = 1
 			{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
-			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+				FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
+				FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+				IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+					FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 			}
+		}
+		else
+		{
+			MsgBox %Rstring% replacment already exists
 		}
 		;MsgBox You entered text in both
 	}
@@ -86,11 +93,6 @@ If RString<>
 }
 return
 
-TESTY:
-Gui, +AlwaysOnTop +Disabled -SysMenu +Owner  ; +Owner avoids a taskbar button.
-Gui, Add, Text,, Some text to display.
-Gui, Show, NoActivate, Title of Window  
-return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 START:
@@ -102,6 +104,7 @@ if hotkey = `{Tab`}
 	if input in %TabKeys%
 	{
 		GoSub, Execute
+		Goto,Start
 	}
 	else 
 	{
@@ -113,6 +116,7 @@ else if hotkey = `{Enter`}
 	if input in %EnterKeys%
 	{
 		GoSub, Execute
+		Goto,Start
 	}
 	else 
 	{
@@ -124,6 +128,7 @@ else if hotkey = `{Space`}
 	if input in %SpaceKeys%
 	{
 		GoSub, Execute
+		Goto,Start
 	}
 	else 
 	{
@@ -149,7 +154,29 @@ SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 ;MsgBox, %ReplacementText%
 ;Send {BS}
+oldClip = %Clipboard%
+Clipboard = %ReplacementText%
+StringReplace, Clipboard, ReplacementText, `%c, %oldClip%, All
+StringGetPos,CursorPoint,Clipboard,`%|
+if ErrorLevel = 0
+{
+	StringReplace, Clipboard, Clipboard, `%|,, All
+	StringLen,ClipLength,Clipboard
+	ReturnTo := ClipLength - CursorPoint
+}
+else
+{
+	ReturnTo := 0
+}
 StringLen,BSlength,input
 Send {BS %BSlength%}
-Send, %ReplacementText%
+Send, ^v
+if ReturnTo > 0
+	Send {Left %ReturnTo%}
+Clipboard = %oldClip%
 return
+
+Parse(text)
+{
+
+}
