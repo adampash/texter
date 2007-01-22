@@ -14,9 +14,9 @@ SendMode Input ; Recommended for new scripts due to its superior speed and relia
 SetKeyDelay,0 
 SetWinDelay,0 
 SetWorkingDir, %A_ScriptDir%
-FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
-FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
-FileRead, SpaceKeys, %A_WorkingDir%\replacements\space.csv
+FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; this section is dabbling with the hotkey replacement of RCtrl
 Hotkey,$Tab,FIRE
@@ -65,18 +65,18 @@ If RString<>
 			FileAppend,%FullText%, %A_WorkingDir%\replacements\%RString%.txt
 			if EnterCbox = 1 
 			{
-				FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\enter.csv
-				FileRead, EnterKeys, %A_WorkingDir%\replacements\enter.csv
+				FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
+				FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 			}
 			if TabCbox = 1
 			{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\tab.csv
-			FileRead, TabKeys, %A_WorkingDir%\replacements\tab.csv
+			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
+			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 			}
 			if SpaceCbox = 1
 			{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\replacements\space.csv
-			FileRead, SpaceKeys, %A_WorkingDir%\replacements\space.csv
+			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
+			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 			}
 		}
 		;MsgBox You entered text in both
