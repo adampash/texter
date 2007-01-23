@@ -24,14 +24,18 @@ Hotkey,$Enter,FIRE
 Hotkey,$Space,FIRE
 Hotkey,^+h,NEWKEY
 
-Goto, Start
+Goto Start
 
 FIRE:
+;MsgBox,%A_ThisHotKey%
 StringTrimLeft,hotkey,A_ThisHotkey,1
 ;If hotkeyl>1 
 hotkey=`{%hotkey%`} 
-Send,{RCtrl} 
-Return
+;MsgBox, %hotkey%
+;Something's weird here - RCtrl isn't triggering the input match below!
+Send,{RCtrl}
+;Send,{RCtrl}
+return
 
 NEWKEY:
 Gui, Destroy
@@ -96,11 +100,13 @@ return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 START:
+;MsgBox Start
 ;hotkey = 
 Input,input,V L99,{RCtrl}
-
+;MsgBox match
 if hotkey = `{Tab`}
 {
+	;MsgBox, Tab2
 	if input in %TabKeys%
 	{
 		GoSub, Execute
@@ -109,6 +115,7 @@ if hotkey = `{Tab`}
 	else 
 	{
 		Send,%hotkey%
+		Goto,Start
 	}
 }
 else if hotkey = `{Enter`}
@@ -121,6 +128,7 @@ else if hotkey = `{Enter`}
 	else 
 	{
 		Send,%hotkey%
+		Goto,Start
 	}
 } 
 else if hotkey = `{Space`}
@@ -133,6 +141,7 @@ else if hotkey = `{Space`}
 	else 
 	{
 		Send,%hotkey%
+		Goto,Start
 	}
 }
 else
@@ -148,6 +157,7 @@ if ErrorLevel = Max
 }
 
 Goto, START
+return
 
 EXECUTE:
 SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
