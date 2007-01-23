@@ -14,6 +14,8 @@ SendMode Input ; Recommended for new scripts due to its superior speed and relia
 SetKeyDelay,0 
 SetWinDelay,0 
 SetWorkingDir, %A_ScriptDir%
+SetTimer,GETWINDOW,999 
+
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
@@ -160,8 +162,12 @@ Goto, START
 return
 
 EXECUTE:
+SetTimer,GETWINDOW,Off
 SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+WinActivate,ahk_id %window% 
+WinWaitActive,ahk_id %window% 
+ControlFocus,%control%,ahk_id %window%
 ;MsgBox, %ReplacementText%
 ;Send {BS}
 oldClip = %Clipboard%
@@ -184,7 +190,20 @@ Send, ^v
 if ReturnTo > 0
 	Send {Left %ReturnTo%}
 Clipboard = %oldClip%
+SetTimer,GETWINDOW,On 
 return
+
+GETWINDOW: 
+WinGet,window0,ID,A 
+WinGetClass,class,ahk_id %window0% 
+If class<> 
+If class<>Shell_TrayWnd 
+If class<>AutoHotkey 
+{ 
+  ControlGetFocus,control,ahk_id %window0% 
+  window=%window0% 
+} 
+Return 
 
 Parse(text)
 {
