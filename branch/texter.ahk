@@ -121,6 +121,10 @@ Send,{RCtrl}
 Return 
 
 READINI: 
+IfNotExist bank
+	FileCreateDir, bank
+IfNotExist replacements
+	FileCreateDir, replacements
 IfNotExist,AutoClip.ini 
   FileAppend,;Keys that start completion - must include Ignore and Cancel keys`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n;Keys not to send after completion`n[Ignore]`nKeys={Tab}`,{Enter}`n;Keys that cancel completion`n[Cancel]`nKeys={Escape},AutoClip.ini 
 IniRead,cancel,AutoClip.ini,Cancel,Keys ;keys to stop completion, remember {} 
