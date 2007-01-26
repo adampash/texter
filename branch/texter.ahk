@@ -144,7 +144,7 @@ Gui, Add, Text,x15 y40, Hotstring:
 Gui, Add, Edit, x13 y55 r1 W65 vRString,
 Gui, Add, Text,x+20 y40, Text:
 Gui, Add, Edit, xp y55 r6 W400 vFullText, Enter your replacement text here...
-Gui, Add, Text,,Execute with:
+Gui, Add, Text,,Trigger with:
 Gui, Add, Checkbox, vEnterCbox yp xp+75, Enter
 Gui, Add, Checkbox, vTabCbox yp xp+60, Tab
 Gui, Add, Checkbox, vSpaceCbox yp xp+60, Space

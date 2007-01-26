@@ -84,47 +84,10 @@ FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
-if EnterCbox = 1
-{
-	if ActiveChoice in %EnterKeys%
-	{
-	}
-	else
-	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
-		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
-	}
-}
-else
-{
-	if ActiveChoice in %EnterKeys%
-	{
-		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\enter.csv
-		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
-		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
-	}
-;	else
-;	{
-;		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
-;		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
-;	}
-}
-
-if ActiveChoice in %TabKeys%
-{
-	;MsgBox,Yep
-	GuiControl,,TabCbox,1
-}
-else
-	GuiControl,,TabCbox,0
-if ActiveChoice in %SpaceKeys%
-{
-	;MsgBox,Yep
-	GuiControl,,SpaceCbox,1
-}
-else
-	GuiControl,,SpaceCbox,0
+GuiControlGet,TabCbox,,TabCbox
+GuiControlGet,SpaceCbox,,SpaceCbox
+Gosub,SAVE
+;;
 return
 
 ButtonCancel:
@@ -168,5 +131,86 @@ If RString<>
 	}
 	else
 		MsgBox Only replacement
+}
+return
+
+SAVE:
+if EnterCbox = 1
+{
+	if ActiveChoice in %EnterKeys%
+	{
+	}
+	else
+	{
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
+		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+	}
+}
+else
+{
+	if ActiveChoice in %EnterKeys%
+	{
+		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\enter.csv
+		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
+		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+	}
+;	else
+;	{
+;		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
+;		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+;	}
+}
+if TabCbox = 1
+{
+	if ActiveChoice in %TabKeys%
+	{
+	}
+	else
+	{
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\tab.csv
+		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+	}
+}
+else
+{
+	if ActiveChoice in %TabKeys%
+	{
+		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\tab.csv
+		FileAppend,%TabKeys%, %A_WorkingDir%\bank\tab.csv
+		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+	}
+;	else
+;	{
+;		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
+;		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+;	}
+}
+if SpaceCbox = 1
+{
+	if ActiveChoice in %SpaceKeys%
+	{
+	}
+	else
+	{
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\space.csv
+		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+	}
+}
+else
+{
+	if ActiveChoice in %SpaceKeys%
+	{
+		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\space.csv
+		FileAppend,%SpaceKeys%, %A_WorkingDir%\bank\space.csv
+		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+	}
+;	else
+;	{
+;		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
+;		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+;	}
 }
 return
