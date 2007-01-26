@@ -19,87 +19,10 @@ Gosub,READINI
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; this section is dabbling with the hotkey replacement of RCtrl
-;Hotkey,$Tab,FIRE
-;Hotkey,$Enter,FIRE
-;Hotkey,$Space,FIRE
 
 Hotkey,^+h,NEWKEY
 
 Goto Start
-
-;FIRE:
-;MsgBox,%A_ThisHotKey%
-;StringTrimLeft,hotkey,A_ThisHotkey,1
-;If hotkeyl>1 
-;hotkey=`{%hotkey%`} 
-;MsgBox, %hotkey%
-;Something's weird here - RCtrl isn't triggering the input match below!
-;Send,{RCtrl}
-;Send,{RCtrl}
-;return
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-NEWKEY:
-Gui, Destroy
-Gui, +AlwaysOnTop +Owner -SysMenu ;suppresses taskbar button, always on top, removes minimize/close
-Gui, Add, Text,x15 y40, Hotstring:
-Gui, Add, Edit, x13 y55 r1 W65 vRString,
-Gui, Add, Text,x+20 y40, Text:
-Gui, Add, Edit, xp y55 r6 W400 vFullText, Enter your replacement text here...
-Gui, Add, Text,,Execute with:
-Gui, Add, Checkbox, vEnterCbox yp xp+75, Enter
-Gui, Add, Checkbox, vTabCbox yp xp+60, Tab
-Gui, Add, Checkbox, vSpaceCbox yp xp+60, Space
-Gui, Add, Button,w80 default,&OK
-Gui, Add, Button,w80 xp+100 GButtonCancel,&Cancel
-Gui, Show, W500 H200
-Hotkey,Esc,ButtonCancel,On
-return
-
-ButtonCancel:
-Gui,Destroy
-Hotkey,Esc,Off
-return
-
-ButtonOK:
-GuiControlGet,RString,,RString
-IfExist, %A_WorkingDir%\replacements\%RString%.txt
-{
-	MsgBox A replacement with the text %Rstring% already exists.  Would you like to try again?
-	return
-}
-Gui, Submit
-If RString<>
-{
-	if FullText<>
-	{		
-		if EnterCbox = 1 
-		{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
-			FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
-			FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
-		}
-		if TabCbox = 1
-		{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
-			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
-			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
-				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
-		}
-		if SpaceCbox = 1
-		{
-			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
-			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
-			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
-				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
-		}
-	}
-}
-return
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 START:
 hotkey = 
@@ -212,6 +135,67 @@ Loop,Parse,keys,`,
     Hotkey,$%key%,HOTKEYS 
 } 
 Return
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+NEWKEY:
+Gui, Destroy
+Gui, +AlwaysOnTop +Owner -SysMenu ;suppresses taskbar button, always on top, removes minimize/close
+Gui, Add, Text,x15 y40, Hotstring:
+Gui, Add, Edit, x13 y55 r1 W65 vRString,
+Gui, Add, Text,x+20 y40, Text:
+Gui, Add, Edit, xp y55 r6 W400 vFullText, Enter your replacement text here...
+Gui, Add, Text,,Execute with:
+Gui, Add, Checkbox, vEnterCbox yp xp+75, Enter
+Gui, Add, Checkbox, vTabCbox yp xp+60, Tab
+Gui, Add, Checkbox, vSpaceCbox yp xp+60, Space
+Gui, Add, Button,w80 default,&OK
+Gui, Add, Button,w80 xp+100 GButtonCancel,&Cancel
+Gui, Show, W500 H200
+Hotkey,Esc,ButtonCancel,On
+return
+
+ButtonCancel:
+Gui,Destroy
+Hotkey,Esc,Off
+return
+
+ButtonOK:
+GuiControlGet,RString,,RString
+IfExist, %A_WorkingDir%\replacements\%RString%.txt
+{
+	MsgBox A replacement with the text %Rstring% already exists.  Would you like to try again?
+	return
+}
+Gui, Submit
+If RString<>
+{
+	if FullText<>
+	{		
+		if EnterCbox = 1 
+		{
+			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
+			FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+			FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
+		}
+		if TabCbox = 1
+		{
+			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
+			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
+		}
+		if SpaceCbox = 1
+		{
+			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
+			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
+		}
+	}
+}
+return
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 EXIT: 
 ExitApp 
