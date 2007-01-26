@@ -17,8 +17,6 @@ SetWorkingDir, %A_ScriptDir%
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
-FireKeys = Enter,Tab,Space
-FireKeyBank = EnterKeys,TabKeys,SpaceKeys
 FileList =
 Loop, %A_WorkingDir%\replacements\*.txt
 {
@@ -33,7 +31,7 @@ SETTINGS:
 Gui, Destroy
 ;Gui, +Owner -SysMenu ;suppresses taskbar button, always on top, removes minimize/close
 Gui, Add, Text,x15 y20, Hotstring:
-Gui, Add, ListBox, x13 y35 r25 W100 vChoice gShowString,%FileList%
+Gui, Add, ListBox, x13 y35 r20 W100 vChoice gShowString,%FileList%
 Gui, Add, Text,x+20 y40, Text:
 Gui, Add, Edit, xp y55 r15 W400 vFullText, Enter your replacement text here...
 Gui, Add, Text,,Execute with:
