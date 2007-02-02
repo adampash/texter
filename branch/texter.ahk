@@ -16,6 +16,7 @@ SetWinDelay,0
 SetWorkingDir, "%A_ScriptDir%"
 
 Gosub,READINI
+MsgBox, %Ignore%
 Gosub,TRAYMENU
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
@@ -29,60 +30,32 @@ Goto Start
 START:
 hotkey = 
 Input,input,V L99,{RCtrl}
-;MsgBox match
-if hotkey = `{Tab`}
+if hotkey in %Ignore%
 {
-	;MsgBox, Tab2
-	if input in %TabKeys%
-	{
-		GoSub, Execute
-		Goto,Start
-	}
-	else 
-	{
+	if hotkey = `{Tab`}
+		if input in %TabKeys%
+			GoSub, Execute
+		else
+			Send,%hotkey%
+	else if hotkey = `{Enter`}
+		if input in %EnterKeys%
+			GoSub, Execute
+		else
+			Send,%hotkey%
+	else if hotkey = `{Space`}
+		if input in %SpaceKeys%
+			GoSub, Execute
+		else
+			Send,%hotkey%
+	else
 		Send,%hotkey%
 		Goto,Start
-	}
-}
-else if hotkey = `{Enter`}
-{
-	if input in %EnterKeys%
-	{
-		GoSub, Execute
-		Goto,Start
-	}
-	else 
-	{
-		Send,%hotkey%
-		Goto,Start
-	}
-} 
-else if hotkey = `{Space`}
-{
-	if input in %SpaceKeys%
-	{
-		GoSub, Execute
-		Goto,Start
-	}
-	else 
-	{
-		Send,%hotkey%
-		Goto,Start
-	}
 }
 else
 {
 	Send,%hotkey%
-	Goto, Start
+	Goto,Start
 }
-
-if ErrorLevel = Max
-{
-    Goto, Start
-    return
-}
-
-Goto, START
 return
 
 EXECUTE:
@@ -126,7 +99,7 @@ IfNotExist bank
 IfNotExist replacements
 	FileCreateDir, replacements
 IfNotExist,AutoClip.ini 
-  FileAppend,;Keys that start completion - must include Ignore and Cancel keys`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n;Keys not to send after completion`n[Ignore]`nKeys={Tab}`,{Enter}`n;Keys that cancel completion`n[Cancel]`nKeys={Escape},AutoClip.ini 
+  FileAppend,;Keys that start completion - must include Ignore and Cancel keys`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{!}`,{Left}`,{Right}`n;Keys not to send after completion`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n;Keys that cancel completion`n[Cancel]`nKeys={Escape},AutoClip.ini 
 IniRead,cancel,AutoClip.ini,Cancel,Keys ;keys to stop completion, remember {} 
 IniRead,ignore,AutoClip.ini,Ignore,Keys ;keys not to send after completion 
 IniRead,keys,AutoClip.ini,Autocomplete,Keys 
