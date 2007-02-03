@@ -56,7 +56,10 @@ return
 ADD:
 GoSub,Newkey
 IfWinExist,Add new hotstring...
+{
+	MsgBox exists
 	WinWaitClose,Add new hotstring...,,
+}
 GoSub,GetFileList
 StringReplace, FileList, FileList,%RString%,%RString%|
 GuiControl,,Choice,|%FileList%

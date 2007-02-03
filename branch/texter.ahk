@@ -118,17 +118,19 @@ Return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 NEWKEY:
 Gui,1: Destroy
-Gui,1: +AlwaysOnTop +Owner -SysMenu ;suppresses taskbar button, always on top, removes minimize/close
-Gui,1: Add, Text,x15 y40, Hotstring:
-Gui,1: Add, Edit, x13 y55 r1 W65 vRString,
-Gui,1: Add, Text,x+20 y40, Text:
-Gui,1: Add, Edit, xp y55 r6 W400 vFullText, Enter your replacement text here...
-Gui,1: Add, Text,,Trigger with:
-Gui,1: Add, Checkbox, vEnterCbox yp xp+75, Enter
-Gui,1: Add, Checkbox, vTabCbox yp xp+60, Tab
-Gui,1: Add, Checkbox, vSpaceCbox yp xp+60, Space
-Gui,1: Add, Button,w80 default,&OK
-Gui,1: Add, Button,w80 xp+100 GButtonCancel,&Cancel
+Gui,1: font, s12, Arial  
+Gui,1: +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
+Gui,1: Add, Text,x10 y20, Hotstring:
+Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
+Gui,1: Add, Text,x100 y20, Text:
+Gui,1: Add, Edit, xp y45 r4 W395 vFullText, Enter your replacement text here...
+Gui,1: Add, Text,x215,Trigger:
+Gui,1: Add, Checkbox, vEnterCbox yp x275, Enter
+Gui,1: Add, Checkbox, vTabCbox yp x342, Tab
+Gui,1: Add, Checkbox, vSpaceCbox yp x405, Space
+Gui,1: font, s8, Arial 
+Gui,1: Add, Button,w80 x320 default,&OK
+Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
 Gui,1: Show, W500 H200,Add new hotstring...
 Hotkey,Esc,ButtonCancel,On
 return
@@ -208,7 +210,7 @@ Gui,2: Add, Text,x15 y20, Hotstring:
 Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
 Gui,2: Add, Text,x+20 y20, Text:
 Gui,2: Add, Edit, xp y40 r12 W400 vFullText, Enter your replacement text here...
-Gui,2: Add, Text,,Execute with:
+Gui,2: Add, Text,,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+75, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+60, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
@@ -233,7 +235,10 @@ Loop,Parse,keys,`,
 }
 GoSub,Newkey
 IfWinExist,Add new hotstring...
+{
+	MsgBox Window exists
 	WinWaitClose,Add new hotstring...,,
+}
 GoSub,GetFileList
 StringReplace, FileList, FileList,%RString%,%RString%|
 GuiControl,,Choice,|%FileList%
