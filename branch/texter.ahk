@@ -124,10 +124,10 @@ Gui,1: Add, Text,x10 y20, Hotstring:
 Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
 Gui,1: Add, Text,x100 y20, Text:
 Gui,1: Add, Edit, xp y45 r4 W395 vFullText, Enter your replacement text here...
-Gui,1: Add, Text,x215,Trigger:
-Gui,1: Add, Checkbox, vEnterCbox yp x275, Enter
-Gui,1: Add, Checkbox, vTabCbox yp x342, Tab
-Gui,1: Add, Checkbox, vSpaceCbox yp x405, Space
+Gui,1: Add, Text,x115,Trigger:
+Gui,1: Add, Checkbox, vEnterCbox yp x175, Enter
+Gui,1: Add, Checkbox, vTabCbox yp x242, Tab
+Gui,1: Add, Checkbox, vSpaceCbox yp x305, Space
 Gui,1: font, s8, Arial 
 Gui,1: Add, Button,w80 x320 default,&OK
 Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
@@ -209,16 +209,18 @@ Gui,2: font, s12, Arial
 Gui,2: Add, Text,x15 y20, Hotstring:
 Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
 Gui,2: Add, Text,x+20 y20, Text:
-Gui,2: Add, Edit, xp y40 r12 W400 vFullText, Enter your replacement text here...
-Gui,2: Add, Text,,Trigger:
-Gui,2: Add, Checkbox, vEnterCbox yp xp+75, Enter
-Gui,2: Add, Checkbox, vTabCbox yp xp+60, Tab
+Gui,2: Add, Edit, xp y40 r12 W460 vFullText, Enter your replacement text here...
+Gui,2: Add, Text,y282 x150,Trigger:
+Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
+Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
-Gui,2: Add,Button,w80 GPButtonSave yp xp+100,&Save
-Gui,2: Add, Button,w80 GPButtonOK xp-50 yp+80,&OK
-Gui,2: Add, Button,w80 xp+100 GPButtonCancel,&Cancel
-Gui,2: Add, Button, w30 x50 y320 GAdd,+
-Gui,2: Add, Button, w30 x90 y320 GDelete,-
+Gui,2: font, s8, Arial
+Gui,2: Add,Button,w80 GPButtonSave yp x500,&Save
+Gui,2: Add, Button,w80 default GPButtonOK x420 yp+80,&OK
+Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
+Gui,2: font, s12, Arial 
+Gui,2: Add, Button, w35 x20 y320 GAdd,+
+Gui,2: Add, Button, w35 x60 y320 GDelete,-
 Gui,2: Show, W600 H400, Texter Management
 return
 
@@ -236,17 +238,18 @@ Loop,Parse,keys,`,
 GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
-	MsgBox Window exists
+	;MsgBox Window exists
 	WinWaitClose,Add new hotstring...,,
 }
 GoSub,GetFileList
-StringReplace, FileList, FileList,%RString%,%RString%|
+StringReplace, FileList, FileList,|%RString%|,|%RString%||
+;MsgBox %FileList% `n %RString%
 GuiControl,,Choice,|%FileList%
 GoSub,ShowString
 Loop,Parse,keys,`, 
 { 
   StringTrimLeft,key,A_LoopField,1 
-  StringTrimRight,key,key,1 
+  StringTrimRight,key,key,1
   StringLen,length,key 
   If length=0 
     Hotkey,$`,,On
@@ -257,7 +260,7 @@ return
 
 DELETE:
 GuiControlGet,ActiveChoice,,Choice
-MsgBox,1,Confirm Delete,You wanna delete this: %ActiveChoice%?
+MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%?
 IfMsgBox, OK
 {
 	FileDelete,%A_WorkingDir%\replacements\%ActiveChoice%.txt
