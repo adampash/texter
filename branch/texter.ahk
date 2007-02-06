@@ -18,6 +18,7 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 ;MsgBox, %Ignore%
 Gosub,TRAYMENU
+;SetTimer,GETWINDOW,999 
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
@@ -29,7 +30,7 @@ Goto Start
 
 START:
 hotkey = 
-Input,input,V L99,{RCtrl}
+Input,input,V L99,{SC77}
 if hotkey in %Ignore%
 {
 	if hotkey = `{Tab`}
@@ -59,6 +60,7 @@ else
 return
 
 EXECUTE:
+;SetTimer,GETWINDOW,Off 
 SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 ;MsgBox, %ReplacementText%
@@ -83,6 +85,7 @@ Send, ^v
 if ReturnTo > 0
 	Send {Left %ReturnTo%}
 Clipboard = %oldClip%
+;SetTimer,GETWINDOW,On 
 return
 
 HOTKEYS: 
@@ -90,7 +93,7 @@ StringTrimLeft,hotkey,A_ThisHotkey,1
 StringLen,hotkeyl,hotkey 
 If hotkeyl>1 
   hotkey=`{%hotkey%`} 
-Send,{RCtrl} 
+Send,{SC77}
 Return 
 
 READINI: 
@@ -427,5 +430,18 @@ else
 }
 return
 
+;;;;;;;;;;;;;;;;;;; REMOVE IF NOT IN USE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GETWINDOW: 
+WinGet,window0,ID,A 
+WinGetClass,class,ahk_id %window0% 
+If class<> 
+If class<>Shell_TrayWnd 
+If class<>AutoHotkey 
+{ 
+  ControlGetFocus,control,ahk_id %window0% 
+  window=%window0% 
+} 
+Return 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 EXIT: 
 ExitApp 
