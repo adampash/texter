@@ -81,7 +81,16 @@ else
 }
 StringLen,BSlength,input
 Send {BS %BSlength%}
-Send, ^v
+IfInString,Clipboard,::scr::
+{
+	StringReplace,Script,Clipboard,::scr::,,
+	Send,%Script%
+	oldClip = %Clipboard% ; this is to make sure that if someone scripts a copy, it is retained
+}
+else
+{
+	Send,^v
+}
 if ReturnTo > 0
 	Send {Left %ReturnTo%}
 Clipboard = %oldClip%
@@ -188,7 +197,7 @@ Menu,Tray,NoStandard
 Menu,Tray,DeleteAll 
 ;Menu,Tray,Add,Mouser,ABOUT
 ;Menu,Tray,Add,
-Menu,Tray,Add,&Manage hotstrings,SETTINGS
+Menu,Tray,Add,&Manage hotstrings,MANAGE
 ;Menu,Tray,Add,&About...,ABOUT
 Menu,Tray,Add,E&xit,EXIT
 ;Menu,Tray,Default,Texter
@@ -204,7 +213,7 @@ Loop, %A_WorkingDir%\replacements\*.txt
 StringReplace, FileList, FileList, .txt,,All
 return
 
-SETTINGS:
+MANAGE:
 GoSub,GetFileList
 StringReplace, FileList, FileList, .txt,,All
 Gui,2: Destroy
@@ -212,7 +221,7 @@ Gui,2: font, s12, Arial
 Gui,2: Add, Text,x15 y20, Hotstring:
 Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
 Gui,2: Add, Text,x+20 y20, Text:
-Gui,2: Add, Edit, xp y40 r12 W460 vFullText, Enter your replacement text here...
+Gui,2: Add, Edit, xp y40 r12 W460 vFullText,
 Gui,2: Add, Text,y282 x150,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
