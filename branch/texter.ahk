@@ -134,8 +134,9 @@ Gui,1: font, s12, Arial
 Gui,1: +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
 Gui,1: Add, Text,x10 y20, Hotstring:
 Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
-Gui,1: Add, Text,x100 y20, Text:
-Gui,1: Add, Edit, xp y45 r4 W395 vFullText, Enter your replacement text here...
+;Gui,1: Add, Text,x100 y20, Text:
+;Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
+Gui,1: Add, Edit, x100 y45 r4 W395 vFullText, Enter your replacement text here...
 Gui,1: Add, Text,x115,Trigger:
 Gui,1: Add, Checkbox, vEnterCbox yp x175, Enter
 Gui,1: Add, Checkbox, vTabCbox yp x242, Tab
@@ -143,6 +144,8 @@ Gui,1: Add, Checkbox, vSpaceCbox yp x305, Space
 Gui,1: font, s8, Arial 
 Gui,1: Add, Button,w80 x320 default,&OK
 Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
+Gui,1: font, s12, Arial  
+Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
 Gui,1: Show, W500 H200,Add new hotstring...
 Hotkey,Esc,ButtonCancel,On
 return
@@ -156,7 +159,7 @@ ButtonOK:
 GuiControlGet,RString,,RString
 IfExist, %A_WorkingDir%\replacements\%RString%.txt
 {
-	MsgBox A replacement with the text %Rstring% already exists.  Would you like to try again?
+	MsgBox,262144,Hotstring already exists, A replacement with the text %Rstring% already exists.  Would you like to try again?
 	return
 }
 Gui, Submit
@@ -168,6 +171,8 @@ If RString<>
 		{
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
 			FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+			if TextOrScript = Script
+				FullText = ::scr::%FullText%
 			FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 		}
 		if TabCbox = 1
@@ -175,14 +180,22 @@ If RString<>
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
 			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+			{
+				if TextOrScript = Script
+					FullText = ::scr::%FullText%
 				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
+			}
 		}
 		if SpaceCbox = 1
 		{
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
 			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
+			{
+				if TextOrScript = Script
+					FullText = ::scr::%FullText%
 				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
+			}
 		}
 	}
 }
@@ -220,8 +233,9 @@ Gui,2: Destroy
 Gui,2: font, s12, Arial  
 Gui,2: Add, Text,x15 y20, Hotstring:
 Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
-Gui,2: Add, Text,x+20 y20, Text:
-Gui,2: Add, Edit, xp y40 r12 W460 vFullText,
+Gui,2: Add,DropDownList,x+20 y15 vTextOrScript, Text||Script
+;Gui,2: Add, Text,x+20 y20, Text:
+Gui,2: Add, Edit, xp y45 r12 W460 vFullText,
 Gui,2: Add, Text,y282 x150,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
@@ -335,15 +349,32 @@ else
 ;MsgBox, Hi
 FileRead, Text, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 ;MsgBox,%ActiveChoice%
+IfInString,Text,::scr::
+{
+	GuiControl,,TextOrScript,|Text|Script||
+	StringReplace,Text,Text,::scr::,,
+}
+else
+	GuiControl,,TextOrScript,|Text||Script
 GuiControl,,FullText,%Text%
 return
 
 PButtonSave:
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
+GuiControlGet,ToS,,TextOrScript
 ;MsgBox, %SaveText%
 FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
-FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+if ToS = Text
+{
+	;MsgBox,Text
+	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+}
+else
+{
+	;MsgBox,Script
+	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+}
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
 GuiControlGet,TabCbox,,TabCbox
@@ -360,9 +391,15 @@ PButtonOK:
 Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
+GuiControlGet,ToS,,TextOrScript
 ;MsgBox, %SaveText%
 FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
-FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+if ToS = Text
+	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+else
+	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+
+;FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
 GuiControlGet,TabCbox,,TabCbox
