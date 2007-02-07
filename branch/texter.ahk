@@ -14,8 +14,9 @@
 SetKeyDelay,0 
 SetWinDelay,0 
 SetWorkingDir, "%A_ScriptDir%"
-
 Gosub,READINI
+FileInstall,texter.ico,%A_ScriptDir%\resources\texter.ico,1
+FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
 ;MsgBox, %Ignore%
 Gosub,TRAYMENU
 ;SetTimer,GETWINDOW,999 
@@ -61,7 +62,7 @@ return
 
 EXECUTE:
 ;SetTimer,GETWINDOW,Off 
-SoundPlay, %A_WinDir%\Media\Windows XP Restore.wav
+SoundPlay, %A_ScriptDir%\resources\replace.wav
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 ;MsgBox, %ReplacementText%
 ;Send {BS}
@@ -71,9 +72,14 @@ StringReplace, Clipboard, ReplacementText, `%c, %oldClip%, All
 StringGetPos,CursorPoint,Clipboard,`%|
 if ErrorLevel = 0
 {
+	StringReplace, MeasureClip,Clipboard,`n,,All
+	StringGetPos,CursorPoint,MeasureClip,`%|
 	StringReplace, Clipboard, Clipboard, `%|,, All
-	StringLen,ClipLength,Clipboard
+	StringReplace, MeasureClip,Clipboard,`n,,All
+	StringLen,ClipLength,MeasureClip
+;	MsgBox,%ClipLength%
 	ReturnTo := ClipLength - CursorPoint
+;	MsgBox,%ReturnTo%
 }
 else
 {
@@ -110,6 +116,8 @@ IfNotExist bank
 	FileCreateDir, bank
 IfNotExist replacements
 	FileCreateDir, replacements
+IfNotExist resources
+	FileCreateDir, resources
 IfNotExist,AutoClip.ini 
   FileAppend,;Keys that start completion - must include Ignore and Cancel keys`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n;Keys not to send after completion`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n;Keys that cancel completion`n[Cancel]`nKeys={Escape},AutoClip.ini 
 IniRead,cancel,AutoClip.ini,Cancel,Keys ;keys to stop completion, remember {} 
@@ -206,13 +214,14 @@ return
 
 
 TRAYMENU:
-Menu,Tray,NoStandard 
-Menu,Tray,DeleteAll 
+Menu,TRAY,NoStandard 
+;Menu,TRAY,Icon,resources\texter.ico
+Menu,TRAY,DeleteAll 
 ;Menu,Tray,Add,Mouser,ABOUT
 ;Menu,Tray,Add,
-Menu,Tray,Add,&Manage hotstrings,MANAGE
+Menu,TRAY,Add,&Manage hotstrings,MANAGE
 ;Menu,Tray,Add,&About...,ABOUT
-Menu,Tray,Add,E&xit,EXIT
+Menu,TRAY,Add,E&xit,EXIT
 ;Menu,Tray,Default,Texter
 ;Menu,Tray,Tip,Texter
 Return
