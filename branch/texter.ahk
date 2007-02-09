@@ -63,45 +63,40 @@ return
 EXECUTE:
 ;SetTimer,GETWINDOW,Off 
 SoundPlay, %A_ScriptDir%\resources\replace.wav
-FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
-;MsgBox, %ReplacementText%
-;Send {BS}
 oldClip = %Clipboard%
-Clipboard = %ReplacementText%
-StringReplace, Clipboard, ReplacementText, `%c, %oldClip%, All
-StringGetPos,CursorPoint,Clipboard,`%|
-if ErrorLevel = 0
-{
-	StringReplace, MeasureClip,Clipboard,`n,,All
-	StringGetPos,CursorPoint,MeasureClip,`%|
-	StringReplace, Clipboard, Clipboard, `%|,, All
-	StringReplace, MeasureClip,Clipboard,`n,,All
-	StringLen,ClipLength,MeasureClip
-;	MsgBox,%ClipLength%
-	ReturnTo := ClipLength - CursorPoint
-;	MsgBox,%ReturnTo%
-}
-else
-{
-	ReturnTo := 0
-}
+ReturnTo := 0
 StringLen,BSlength,input
 Send {BS %BSlength%}
+FileRead, Clipboard, %A_WorkingDir%\replacements\%input%.txt
 IfInString,Clipboard,::scr::
 {
 	StringReplace,Script,Clipboard,::scr::,,
 	Send,%Script%
 	oldClip = %Clipboard% ; this is to make sure that if someone scripts a copy, it is retained
+	return
 }
 else
 {
+	IfInString,Clipboard,`%c
+	{
+		StringReplace, Clipboard, Clipboard, `%c, %oldClip%, All
+	}
+	IfInString,Clipboard,`%|
+	{
+		StringGetPos,CursorPoint,Clipboard,`%|
+		StringReplace, MeasureClip,Clipboard,`n,,All
+		StringGetPos,CursorPoint,MeasureClip,`%|
+		StringReplace, Clipboard, Clipboard, `%|,, All
+		StringReplace, MeasureClip,Clipboard,`n,,All
+		StringLen,ClipLength,MeasureClip
+		ReturnTo := ClipLength - CursorPoint
+	}
 	Send,^v
-}
-if ReturnTo > 0
+	if ReturnTo > 0
 	Send {Left %ReturnTo%}
-Clipboard = %oldClip%
-;SetTimer,GETWINDOW,On 
-return
+	Clipboard = %oldClip%
+}
+Return
 
 HOTKEYS: 
 StringTrimLeft,hotkey,A_ThisHotkey,1 
