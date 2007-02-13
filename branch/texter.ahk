@@ -14,8 +14,7 @@ SetKeyDelay,0
 SetWinDelay,0 
 SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
-FileInstall,texter.ico,%A_ScriptDir%\resources\texter.ico,1
-FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
+Gosub,RESOURCES
 Gosub,TRAYMENU
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
@@ -33,7 +32,7 @@ if hotkey In %cancel%
 	Send,%hotkey%
 	Goto,START
 }
-IfNotInString,FileList,|%input%|
+IfNotInString,FileList,%input%|
 {
 	Send,%hotkey%
 	Goto,START
@@ -197,6 +196,16 @@ IfExist, %A_WorkingDir%\replacements\%RString%.txt
 	MsgBox,262144,Hotstring already exists, A replacement with the text %Rstring% already exists.  Would you like to try again?
 	return
 }
+GuiControlGet,EnterCbox,,EnterCbox
+GuiControlGet,TabCbox,,TabCbox
+GuiControlGet,SpaceCbox,,SpaceCbox
+if EnterCbox = 0
+	if TabCbox = 0
+		if SpaceCbox = 0
+		{
+			MsgBox,262144,Choose a trigger,You need to choose a trigger in order to save a hotstring replacement.
+			return
+		}
 Gui, Submit
 If RString<>
 {
@@ -423,7 +432,7 @@ return
 
 DELETE:
 GuiControlGet,ActiveChoice,,Choice
-MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%?
+MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
 	FileDelete,%A_WorkingDir%\replacements\%ActiveChoice%.txt
@@ -611,6 +620,15 @@ else
 	}
 
 }
+return
+
+RESOURCES:
+IfNotExist,%A_ScriptDir%\resources\texter.ico
+	FileInstall,texter.ico,%A_ScriptDir%\resources\texter.ico,1
+IfNotExist,%A_ScriptDir%\resources\replace.wav
+	FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
+IfNotExist,%A_ScriptDir%\resources\texter48x48.png
+	FileInstall,texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,1
 return
 
 ;;;;;;;;;;;;;;;;;;; REMOVE IF NOT IN USE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
