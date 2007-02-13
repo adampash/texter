@@ -9,54 +9,78 @@
 ;	of auto-replacing hotstrings for repetitive text
 
 #SingleInstance,Force 
-#NoEnv ; Recommended for performance and compatibility with future AutoHotkey releases.
-;SendMode Input ; Recommended for new scripts due to its superior speed and reliability.
+#NoEnv
 SetKeyDelay,0 
 SetWinDelay,0 
 SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 FileInstall,texter.ico,%A_ScriptDir%\resources\texter.ico,1
 FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
-;MsgBox, %Ignore%
 Gosub,TRAYMENU
-;SetTimer,GETWINDOW,999 
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
-
-Hotkey,^+h,NEWKEY
-
+Gosub,GetFileList
 Goto Start
 
 START:
 hotkey = 
 Input,input,V L99,{SC77}
-if hotkey in %Ignore%
+;MsgBox, %FileList%
+if hotkey In %cancel%
 {
-	if hotkey = `{Tab`}
-		if input in %TabKeys%
-			GoSub, Execute
-		else
-			Send,%hotkey%
-	else if hotkey = `{Enter`}
-		if input in %EnterKeys%
-			GoSub, Execute
-		else
-			Send,%hotkey%
-	else if hotkey = `{Space`}
-		if input in %SpaceKeys%
-			GoSub, Execute
-		else
-			Send,%hotkey%
+	Send,%hotkey%
+	Goto,START
+}
+IfNotInString,FileList,|%input%|
+{
+	Send,%hotkey%
+	Goto,START
+}
+else if hotkey = `{Space`}
+{
+	if input in %SpaceKeys%
+	{
+		GoSub, Execute
+		Goto,START
+	}
 	else
+	{
 		Send,%hotkey%
 		Goto,Start
+	}
+}
+else if hotkey = `{Enter`}
+{
+	if input in %EnterKeys%
+	{
+		GoSub, Execute
+		Goto,START
+	}
+	else
+	{
+		Send,%hotkey%
+		Goto,Start
+	}
+}
+else if hotkey = `{Tab`}
+{
+	if input in %TabKeys%
+	{
+		GoSub, Execute
+		GoTo,Start
+	}
+	else
+	{
+		Send,%hotkey%
+		Goto,Start
+	}
 }
 else
 {
 	Send,%hotkey%
-	Goto,Start
+	Goto,START
 }
 return
 
@@ -113,11 +137,14 @@ IfNotExist replacements
 	FileCreateDir, replacements
 IfNotExist resources
 	FileCreateDir, resources
-IfNotExist,AutoClip.ini 
-  FileAppend,;Keys that start completion - must include Ignore and Cancel keys`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n;Keys not to send after completion`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n;Keys that cancel completion`n[Cancel]`nKeys={Escape},AutoClip.ini 
-IniRead,cancel,AutoClip.ini,Cancel,Keys ;keys to stop completion, remember {} 
-IniRead,ignore,AutoClip.ini,Ignore,Keys ;keys not to send after completion 
-IniRead,keys,AutoClip.ini,Autocomplete,Keys 
+IfNotExist,texter.ini 
+  FileAppend,[Hotkey]`nOntheFly=^+H`nManagement=`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n[Cancel]`nKeys={Escape}`n,texter.ini 
+IniRead,cancel,texter.ini,Cancel,Keys ;keys to stop completion, remember {} 
+IniRead,ignore,texter.ini,Ignore,Keys ;keys not to send after completion 
+IniRead,keys,texter.ini,Autocomplete,Keys 
+IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
+IniRead,managehotkey,texter.ini,Hotkey,Management
+;MsgBox,%otfhotkey%
 Loop,Parse,keys,`, 
 { 
   StringTrimLeft,key,A_LoopField,1 
@@ -128,6 +155,10 @@ Loop,Parse,keys,`,
   Else 
     Hotkey,$%key%,HOTKEYS 
 } 
+if otfhotkey<>
+	Hotkey,%otfhotkey%,NEWKEY
+if managehotkey <>
+	Hotkey,%managehotkey%,MANAGE
 Return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,6 +180,7 @@ Gui,1: Add, Button,w80 x320 default,&OK
 Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
 Gui,1: font, s12, Arial  
 Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
+Gui,1: Add,Picture,x20 y100,%A_WorkingDir%\resources\texter48x48.png
 Gui,1: Show, W500 H200,Add new hotstring...
 Hotkey,Esc,ButtonCancel,On
 return
@@ -202,6 +234,7 @@ If RString<>
 		}
 	}
 }
+Gosub,GetFileList
 return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; End Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -210,15 +243,61 @@ return
 
 TRAYMENU:
 Menu,TRAY,NoStandard 
-;Menu,TRAY,Icon,resources\texter.ico
 Menu,TRAY,DeleteAll 
-;Menu,Tray,Add,Mouser,ABOUT
-;Menu,Tray,Add,
 Menu,TRAY,Add,&Manage hotstrings,MANAGE
-;Menu,Tray,Add,&About...,ABOUT
+Menu,TRAY,Add,&Preferences...,PREFERENCES
+Menu,TRAY,Add
+Menu,TRAY,Add,&Help,HELP
+Menu,TRAY,Add
+Menu,TRAY,Add,&About...,ABOUT
 Menu,TRAY,Add,E&xit,EXIT
-;Menu,Tray,Default,Texter
-;Menu,Tray,Tip,Texter
+Menu,Tray,Tip,Texter
+Return
+
+ABOUT:
+Gui,4: Destroy
+Gui,4: Add,Picture,x30 y10,%A_WorkingDir%\resources\texter48x48.png
+Gui,4: font, s36, Arial
+Gui,4: Add, Text,x90 y5,Texter
+Gui,4: font, s9, Arial 
+Gui,4: Add,Text,x10 y70 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker. For details on how to use Texter, check`nout the
+Gui,4:Font,underline bold
+Gui,4:Add,Text,cBlue gTexterHomepage Center x110 y190,Texter homepage
+Gui,4: Show,w310 h220,About Texter
+Return
+
+TexterHomepage:
+Run http://lifehacker.com
+return
+
+BasicUse:
+Run http://lifehacker.com
+return
+
+Scripting:
+Run http://lifehacker.com
+return
+
+HELP:
+Gui,5: Destroy
+Gui,5: Add,Picture,x65 y10,%A_WorkingDir%\resources\texter48x48.png
+Gui,5: font, s36, Arial
+Gui,5: Add, Text,x125 y5,Texter
+Gui,5: font, s9, Arial 
+Gui,5: Add,Text,x19 y255 w300 center,All of Texter's documentation can be found online at the
+Gui,5:Font,underline bold
+Gui,5:Add,Text,cBlue gTexterHomepage Center x125 y275,Texter homepage
+Gui,5: font, s9 norm, Arial 
+Gui,5: Add,Text,x10 y70 w300,For help by topic, click on one of the following:
+Gui,5:Font,underline bold
+Gui,5:Add,Text,x30 y90 cBlue gBasicUse,Basic Use: 
+Gui,5:Font,norm
+Gui,5:Add,Text,x50 y110 w280, Covers how to create basic text replacement hotstrings.
+Gui,5:Font,underline bold
+Gui,5:Add,Text,x30 y150 cBlue gScripting,Sending advanced keystrokes: 
+Gui,5:Font,norm
+Gui,5:Add,Text,x50 y170 w280, Texter is capable of sending advanced keystrokes, like keyboard combinations.  This section lists all of the special characters used in script creation, and offers a few examples of how you might use scripts.
+Gui,5: Show,w350 h300,Texter Help
 Return
 
 GetFileList:
@@ -229,6 +308,57 @@ Loop, %A_WorkingDir%\replacements\*.txt
 }
 StringReplace, FileList, FileList, .txt,,All
 return
+
+PREFERENCES:
+if otfhotkey<>
+	HotKey,%otfhotkey%,Off
+if managehotkey<>
+	HotKey,%managehotkey%,Off
+Gui,3: Destroy
+Gui,3: Add,Text,x10 y10,On-the-Fly shortcut:
+Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
+Gui,3: Add,Text,x150 y10,Hotstring Management shortuct:
+Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
+Gui,3: Add,Button,x150 y95 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x230 y95 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Show,w310 h120,Texter Preferences
+Return
+
+SETTINGSOK:
+Gui,3: Submit
+If sotfhotkey<>
+{
+  otfhotkey:=sotfhotkey
+  Hotkey,%otfhotkey%,Newkey
+  IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
+  HotKey,%otfhotkey%,On
+}
+else
+{
+	otfhotkey:=sotfhotkey
+	IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
+}
+If smanagehotkey<>
+{
+  managehotkey:=smanagehotkey
+  Hotkey,%managehotkey%,Manage
+  IniWrite,%managehotkey%,texter.ini,Hotkey,Management
+  HotKey,%managehotkey%,On
+}
+else
+{	
+	managehotkey:=smanagehotkey
+	IniWrite,%managehotkey%,texter.ini,Hotkey,Management
+}
+Return
+
+SETTINGSCANCEL:
+Gui,3:Destroy
+if otfhotkey<>
+	HotKey,%otfhotkey%,On
+if managehotkey <>
+	HotKey,%managehotkey%,On
+Return
 
 MANAGE:
 GoSub,GetFileList
@@ -251,6 +381,9 @@ Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial 
 Gui,2: Add, Button, w35 x20 y320 GAdd,+
 Gui,2: Add, Button, w35 x60 y320 GDelete,-
+;Gui,2: Add,Picture,x135 y320,%A_WorkingDir%\resources\texter48x48.png
+;Gui,2: font, s30, Arial
+;Gui,2: Add, Text,x190 y325,Texter
 Gui,2: Show, W600 H400, Texter Management
 return
 
