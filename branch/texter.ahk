@@ -1,13 +1,11 @@
-; AutoHotkey Version: 1.x
-; Language:       English
-; Platform:       Win9x/NT
+; Texter
 ; Author:         Adam Pash <adam@lifehacker.com>
 ; Gratefully adapted several ideas from AutoClip by Skrommel:
 ;		http://www.donationcoder.com/Software/Skrommel/index.html#AutoClip
 ; Script Function:
 ;	Designed to implement simple, on-the-fly creation and managment 
 ;	of auto-replacing hotstrings for repetitive text
-
+;	http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
 #SingleInstance,Force 
 #NoEnv
 SetKeyDelay,0 
@@ -26,7 +24,6 @@ Goto Start
 START:
 hotkey = 
 Input,input,V L99,{SC77}
-;MsgBox, %FileList%
 if hotkey In %cancel%
 {
 	Send,%hotkey%
@@ -84,7 +81,6 @@ else
 return
 
 EXECUTE:
-;SetTimer,GETWINDOW,Off 
 SoundPlay, %A_ScriptDir%\resources\replace.wav
 oldClip = %Clipboard%
 ReturnTo := 0
@@ -167,8 +163,6 @@ Gui,1: font, s12, Arial
 Gui,1: +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
 Gui,1: Add, Text,x10 y20, Hotstring:
 Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
-;Gui,1: Add, Text,x100 y20, Text:
-;Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
 Gui,1: Add, Edit, x100 y45 r4 W395 vFullText, Enter your replacement text here...
 Gui,1: Add, Text,x115,Trigger:
 Gui,1: Add, Checkbox, vEnterCbox yp x175, Enter
@@ -254,8 +248,9 @@ TRAYMENU:
 Menu,TRAY,NoStandard 
 Menu,TRAY,DeleteAll 
 Menu,TRAY,Add,&Manage hotstrings,MANAGE
-Menu,TRAY,Add,&Preferences...,PREFERENCES
+Menu,TRAY,Add,&Create new hotstring,NEWKEY
 Menu,TRAY,Add
+Menu,TRAY,Add,&Preferences...,PREFERENCES
 Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
@@ -269,22 +264,22 @@ Gui,4: Add,Picture,x30 y10,%A_WorkingDir%\resources\texter48x48.png
 Gui,4: font, s36, Arial
 Gui,4: Add, Text,x90 y5,Texter
 Gui,4: font, s9, Arial 
-Gui,4: Add,Text,x10 y70 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker. For details on how to use Texter, check`nout the
+Gui,4: Add,Text,x10 y70 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker under the GNU Public License.`nFor details on how to use Texter, check out the
 Gui,4:Font,underline bold
 Gui,4:Add,Text,cBlue gTexterHomepage Center x110 y190,Texter homepage
 Gui,4: Show,w310 h220,About Texter
 Return
 
 TexterHomepage:
-Run http://lifehacker.com
+Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
 return
 
 BasicUse:
-Run http://lifehacker.com
+Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php#basic
 return
 
 Scripting:
-Run http://lifehacker.com
+Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php#advanced
 return
 
 HELP:
@@ -377,7 +372,6 @@ Gui,2: font, s12, Arial
 Gui,2: Add, Text,x15 y20, Hotstring:
 Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
 Gui,2: Add,DropDownList,x+20 y15 vTextOrScript, Text||Script
-;Gui,2: Add, Text,x+20 y20, Text:
 Gui,2: Add, Edit, xp y45 r12 W460 vFullText,
 Gui,2: Add, Text,y282 x150,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
@@ -390,9 +384,6 @@ Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial 
 Gui,2: Add, Button, w35 x20 y320 GAdd,+
 Gui,2: Add, Button, w35 x60 y320 GDelete,-
-;Gui,2: Add,Picture,x135 y320,%A_WorkingDir%\resources\texter48x48.png
-;Gui,2: font, s30, Arial
-;Gui,2: Add, Text,x190 y325,Texter
 Gui,2: Show, W600 H400, Texter Management
 return
 
@@ -410,12 +401,10 @@ Loop,Parse,keys,`,
 GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
-	;MsgBox Window exists
 	WinWaitClose,Add new hotstring...,,
 }
 GoSub,GetFileList
 StringReplace, FileList, FileList,|%RString%|,|%RString%||
-;MsgBox %FileList% `n %RString%
 GuiControl,,Choice,|%FileList%
 GoSub,ShowString
 Loop,Parse,keys,`, 
@@ -472,29 +461,24 @@ ShowString:
 GuiControlGet,ActiveChoice,,Choice
 if ActiveChoice in %EnterKeys%
 {
-	;MsgBox,Yep
 	GuiControl,,EnterCbox,1
 }
 else
 	GuiControl,,EnterCbox,0
 if ActiveChoice in %TabKeys%
 {
-	;MsgBox,Yep
 	GuiControl,,TabCbox,1
 }
 else
 	GuiControl,,TabCbox,0
 if ActiveChoice in %SpaceKeys%
 {
-	;MsgBox,Yep
 	GuiControl,,SpaceCbox,1
 }
 else
 	GuiControl,,SpaceCbox,0
 
-;MsgBox, Hi
 FileRead, Text, %A_WorkingDir%\replacements\%ActiveChoice%.txt
-;MsgBox,%ActiveChoice%
 IfInString,Text,::scr::
 {
 	GuiControl,,TextOrScript,|Text|Script||
@@ -509,16 +493,13 @@ PButtonSave:
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
 GuiControlGet,ToS,,TextOrScript
-;MsgBox, %SaveText%
 FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 if ToS = Text
 {
-	;MsgBox,Text
 	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 }
 else
 {
-	;MsgBox,Script
 	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 }
 GuiControlGet,ActiveChoice,,Choice
@@ -538,14 +519,12 @@ Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
 GuiControlGet,ToS,,TextOrScript
-;MsgBox, %SaveText%
 FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 if ToS = Text
 	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 else
 	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 
-;FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
 GuiControlGet,TabCbox,,TabCbox
@@ -631,18 +610,5 @@ IfNotExist,%A_ScriptDir%\resources\texter48x48.png
 	FileInstall,texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,1
 return
 
-;;;;;;;;;;;;;;;;;;; REMOVE IF NOT IN USE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-GETWINDOW: 
-WinGet,window0,ID,A 
-WinGetClass,class,ahk_id %window0% 
-If class<> 
-If class<>Shell_TrayWnd 
-If class<>AutoHotkey 
-{ 
-  ControlGetFocus,control,ahk_id %window0% 
-  window=%window0% 
-} 
-Return 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 EXIT: 
 ExitApp 
