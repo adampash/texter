@@ -1,10 +1,16 @@
 Features for next release:
 - Add option to run at startup
-- remove punctuation limitations so you can include puncutation in hotstrings
-- Standard mode & clipboard mode
+- Compatibility mode & clipboard mode
 - Incorporate Dustin's date/time variables
-- Printable formatted list of hotstrings
 - Change standard mode to to SendRaw
+
+Someday list:
+- Automatically check for updates
+- Get a good designer to improve interface and art design (e.g., icon)
+- Printable formatted list of hotstrings
+- remove punctuation limitations so users can include puncutation in hotstrings - currently this doesn't work b/c scripts are saved as .txt files, so are limited by Windows naming conventions.  AutoClip had a solution for this (hexify), but not sure I want to get rid of my convention - like being able to identify by text file.
+- Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
+- Clear input on mouse-clicks; so space, tab, enter, etc. aren't the only shortcuts that clear input and it works more as would be expected.
 
 Low priority bugs:
 - Check oversized fonts (see http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1047305)

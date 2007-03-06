@@ -14,6 +14,7 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
+Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
@@ -82,38 +83,59 @@ return
 
 EXECUTE:
 SoundPlay, %A_ScriptDir%\resources\replace.wav
-oldClip = %Clipboard%
 ReturnTo := 0
 StringLen,BSlength,input
 Send {BS %BSlength%}
-FileRead, Clipboard, %A_WorkingDir%\replacements\%input%.txt
-IfInString,Clipboard,::scr::
+FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+
+;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
+StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
+
+IfInString,ReplacementText,::scr::
 {
-	StringReplace,Script,Clipboard,::scr::,,
+	StringReplace,Script,ReplacementText,::scr::,,
 	Send,%Script%
-	oldClip = %Clipboard% ; this is to make sure that if someone scripts a copy, it is retained
 	return
 }
 else
 {
-	IfInString,Clipboard,`%c
+	IfInString,ReplacementText,`%c
 	{
-		StringReplace, Clipboard, Clipboard, `%c, %oldClip%, All
+		StringReplace, ReplacementText, ReplacementText, `%c, %Clipboard%, All
 	}
-	IfInString,Clipboard,`%|
+	IfInString,ReplacementText,`%t
 	{
-		StringGetPos,CursorPoint,Clipboard,`%|
-		StringReplace, MeasureClip,Clipboard,`n,,All
-		StringGetPos,CursorPoint,MeasureClip,`%|
-		StringReplace, Clipboard, Clipboard, `%|,, All
-		StringReplace, MeasureClip,Clipboard,`n,,All
-		StringLen,ClipLength,MeasureClip
+		FormatTime, CurrTime, , Time
+		StringReplace, ReplacementText, ReplacementText, `%t, %CurrTime%, All
+	}
+	IfInString,ReplacementText,`%ds
+	{
+		FormatTime, SDate, , ShortDate
+		StringReplace, ReplacementText, ReplacementText, `%ds, %SDate%, All
+	}
+	IfInString,ReplacementText,`%dl
+	{
+		FormatTime, LDate, , LongDate
+		StringReplace, ReplacementText, ReplacementText, `%dl, %LDate%, All
+	}
+	IfInString,ReplacementText,`%|
+	{
+		StringGetPos,CursorPoint,ReplacementText,`%|
+		StringReplace, ReplacementText, ReplacementText, `%|,, All
+		StringLen,ClipLength,ReplacementText
 		ReturnTo := ClipLength - CursorPoint
 	}
-	Send,^v
+	if MODE = 0
+		SendRaw,%ReplacementText%
+	else
+	{
+		oldClip = %Clipboard%
+		Clipboard = %ReplacementText%
+		Send,^v
+		Clipboard = %oldClip%
+	}
 	if ReturnTo > 0
 	Send {Left %ReturnTo%}
-	Clipboard = %oldClip%
 }
 Return
 
@@ -133,12 +155,13 @@ IfNotExist replacements
 IfNotExist resources
 	FileCreateDir, resources
 IfNotExist,texter.ini 
-  FileAppend,[Hotkey]`nOntheFly=^+H`nManagement=`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{`,}`,{;}`,{.}`,{:}`,{Left}`,{Right}`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n[Cancel]`nKeys={Escape}`n,texter.ini 
+  FileAppend,[Settings]`nMode=0`n[Hotkey]`nOntheFly=^+H`nManagement=`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n[Cancel]`nKeys={Escape}`n,texter.ini 
 IniRead,cancel,texter.ini,Cancel,Keys ;keys to stop completion, remember {} 
 IniRead,ignore,texter.ini,Ignore,Keys ;keys not to send after completion 
 IniRead,keys,texter.ini,Autocomplete,Keys 
 IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
 IniRead,managehotkey,texter.ini,Hotkey,Management
+IniRead,MODE,texter.ini,Settings,Mode
 ;MsgBox,%otfhotkey%
 Loop,Parse,keys,`, 
 { 
@@ -323,9 +346,19 @@ Gui,3: Add,Text,x10 y10,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
 Gui,3: Add,Text,x150 y10,Hotstring Management shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
-Gui,3: Add,Button,x150 y95 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x230 y95 w75 GSETTINGSCANCEL,&Cancel
-Gui,3: Show,w310 h120,Texter Preferences
+if MODE = 0
+{
+	Gui,3: Add,Radio,x10 y70 vModeGroup Checked 1,Compatibility mode (Default)
+	Gui,3: Add,Radio,,Clipboard mode (Faster, but less compatible)
+}
+else
+{
+	Gui,3: Add,Radio,x10 y70 vModeGroup,Compatibility mode (Default)
+	Gui,3: Add,Radio,Checked 1,Clipboard mode (Faster, but less compatible)
+}
+Gui,3: Add,Button,x150 y110 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x230 y110 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Show,w310 h135,Texter Preferences
 Return
 
 SETTINGSOK:
@@ -354,6 +387,11 @@ else
 	managehotkey:=smanagehotkey
 	IniWrite,%managehotkey%,texter.ini,Hotkey,Management
 }
+If ModeGroup = 1
+	MODE = 0
+else
+	MODE = 1
+IniWrite,%MODE%,texter.ini,Settings,Mode
 Return
 
 SETTINGSCANCEL:
@@ -608,6 +646,13 @@ IfNotExist,%A_ScriptDir%\resources\replace.wav
 	FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
 IfNotExist,%A_ScriptDir%\resources\texter48x48.png
 	FileInstall,texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,1
+return
+
+AUTOCLOSE:
+:*?B0:(::){Left}
+:*?B0:[::]{Left}
+:*?B0:{::{}}{Left}
+;:*?B0:"::"{Left}
 return
 
 EXIT: 
