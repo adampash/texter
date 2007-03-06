@@ -1,0 +1,10 @@
+Features for next release:
+- Add option to run at startup
+- remove punctuation limitations so you can include puncutation in hotstrings
+- Standard mode & clipboard mode
+- Incorporate Dustin's date/time variables
+- Printable formatted list of hotstrings
+- Change standard mode to to SendRaw
+
+Low priority bugs:
+- Check oversized fonts (see http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1047305)

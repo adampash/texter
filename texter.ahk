@@ -321,7 +321,7 @@ if managehotkey<>
 Gui,3: Destroy
 Gui,3: Add,Text,x10 y10,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
-Gui,3: Add,Text,x150 y10,Hotstring Management shortuct:
+Gui,3: Add,Text,x150 y10,Hotstring Management shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
 Gui,3: Add,Button,x150 y95 w75 GSETTINGSOK Default,&OK
 Gui,3: Add,Button,x230 y95 w75 GSETTINGSCANCEL,&Cancel
