@@ -8,6 +8,7 @@
 ;	http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
 #SingleInstance,Force 
 #NoEnv
+AutoTrim,off
 SetKeyDelay,0 
 SetWinDelay,0 
 SetWorkingDir, "%A_ScriptDir%"
@@ -162,6 +163,9 @@ IniRead,keys,texter.ini,Autocomplete,Keys
 IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
 IniRead,managehotkey,texter.ini,Hotkey,Management
 IniRead,MODE,texter.ini,Settings,Mode
+IniRead,EnterBox,texter.ini,Triggers,Enter
+IniRead,TabBox,texter.ini,Triggers,Tab
+IniRead,SpaceBox,texter.ini,Triggers,Space
 ;MsgBox,%otfhotkey%
 Loop,Parse,keys,`, 
 { 
@@ -188,9 +192,9 @@ Gui,1: Add, Text,x10 y20, Hotstring:
 Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
 Gui,1: Add, Edit, x100 y45 r4 W395 vFullText, Enter your replacement text here...
 Gui,1: Add, Text,x115,Trigger:
-Gui,1: Add, Checkbox, vEnterCbox yp x175, Enter
-Gui,1: Add, Checkbox, vTabCbox yp x242, Tab
-Gui,1: Add, Checkbox, vSpaceCbox yp x305, Space
+Gui,1: Add, Checkbox, vEnterCbox yp x175 Checked%EnterBox%, Enter
+Gui,1: Add, Checkbox, vTabCbox yp x242 Checked%TabBox%, Tab
+Gui,1: Add, Checkbox, vSpaceCbox yp x305 Checked%SpaceBox%, Space
 Gui,1: font, s8, Arial 
 Gui,1: Add, Button,w80 x320 default,&OK
 Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
@@ -230,14 +234,18 @@ If RString<>
 	{		
 		if EnterCbox = 1 
 		{
+			IniWrite,1,texter.ini,Triggers,Enter
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\enter.csv
 			FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 			if TextOrScript = Script
 				FullText = ::scr::%FullText%
 			FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 		}
+		else
+			IniWrite,0,texter.ini,Triggers,Enter
 		if TabCbox = 1
 		{
+			IniWrite,1,texter.ini,Triggers,Tab
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\tab.csv
 			FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
@@ -247,8 +255,11 @@ If RString<>
 				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 			}
 		}
+		else
+			IniWrite,0,texter.ini,Triggers,Tab
 		if SpaceCbox = 1
 		{
+			IniWrite,1,texter.ini,Triggers,Space
 			FileAppend,%Rstring%`,, %A_WorkingDir%\bank\space.csv
 			FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 			IfNotExist, %A_WorkingDir%\replacements\%RString%.txt
@@ -258,8 +269,13 @@ If RString<>
 				FileAppend,%FullText%,%A_WorkingDir%\replacements\%Rstring%.txt
 			}
 		}
+		else
+			IniWrite,0,texter.ini,Triggers,Space
 	}
 }
+IniRead,EnterBox,texter.ini,Triggers,Enter
+IniRead,TabBox,texter.ini,Triggers,Tab
+IniRead,SpaceBox,texter.ini,Triggers,Space
 Gosub,GetFileList
 return
 
@@ -278,6 +294,7 @@ Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
 Menu,TRAY,Add,E&xit,EXIT
+Menu,TRAY,Default,&Manage hotstrings
 Menu,Tray,Tip,Texter
 Return
 
@@ -356,9 +373,12 @@ else
 	Gui,3: Add,Radio,x10 y70 vModeGroup,Compatibility mode (Default)
 	Gui,3: Add,Radio,Checked 1,Clipboard mode (Faster, but less compatible)
 }
-Gui,3: Add,Button,x150 y110 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x230 y110 w75 GSETTINGSCANCEL,&Cancel
-Gui,3: Show,w310 h135,Texter Preferences
+IniRead,OnStartup,texter.ini,Settings,Startup
+Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
+Gui,3: Add,Button,x150 y145 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x150 y145 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x230 y145 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Show,w310 h170,Texter Preferences
 Return
 
 SETTINGSOK:
@@ -392,6 +412,20 @@ If ModeGroup = 1
 else
 	MODE = 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
+If Startup = 1
+{
+	IfNotExist %A_StartMenu%\Programs\Startup\Texter.lnk
+		FileCreateShortcut,%A_WorkingDir%\texter.exe,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_WorkingDir%,,Text replacement system tray application,%A_WorkingDir%\resources\texter.ico
+}
+else
+{
+	IfExist %A_StartMenu%\Programs\Startup\Texter.lnk
+	{
+		FileDelete %A_StartMenu%\Programs\Startup\Texter.lnk
+	}
+}
+IniWrite,%Startup%,texter.ini,Settings,Startup
+
 Return
 
 SETTINGSCANCEL:
@@ -652,7 +686,6 @@ AUTOCLOSE:
 :*?B0:(::){Left}
 :*?B0:[::]{Left}
 :*?B0:{::{}}{Left}
-;:*?B0:"::"{Left}
 return
 
 EXIT: 
