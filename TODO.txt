@@ -1,20 +1,22 @@
-Features for next release:
+Features/fixes for 0.2 release:
 x Add option to run at startup
 x Compatibility mode & clipboard mode
 x Incorporate Dustin's date/time variables
-x Change standard mode to to SendRaw
+x Change standard mode to SendRaw
 x Save last-used trigger as default for next hotstring
 x Turned off AutoTrim so that spaces at the end of replacements are retained
 x Double-click systray icon launches management
-- Add option for autoclosing
 
 Someday list:
+- Import/Export set of replacements.
 - Automatically check for updates
 - Get a good designer to improve interface and art design (e.g., icon)
 - Printable formatted list of hotstrings
 - remove punctuation limitations so users can include puncutation in hotstrings - currently this doesn't work b/c scripts are saved as .txt files, so are limited by Windows naming conventions.  AutoClip had a solution for this (hexify), but not sure I want to get rid of my convention - like being able to identify by text file.
 - Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
-- Clear input on mouse-clicks; so space, tab, enter, etc. aren't the only shortcuts that clear input and it works more as would be expected.
+- Clear input on mouse-clicks; so space, tab, enter, etc. aren't the only shortcuts that clear input and it works more as would be expected - e.g., when you've been typing in another window and then click to a new window, unless your last keystrokes were enter, space, or tab, the input string won't have cleared so it may not work as expected.
+- Add buttons/dropdown/something in Hotkey creation for insertion of clipboard, cursor, dates, time variables
+- Add option for autoclosing
 
 Low priority bugs:
 - Check oversized fonts (see http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1047305)

@@ -15,7 +15,7 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
-Gosub,AUTOCLOSE
+;Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
@@ -89,17 +89,22 @@ StringLen,BSlength,input
 Send {BS %BSlength%}
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 
-;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
-StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
-
 IfInString,ReplacementText,::scr::
 {
+	;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
+	StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
 	StringReplace,Script,ReplacementText,::scr::,,
 	Send,%Script%
 	return
 }
 else
 {
+	;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
+	;(but only in compatibility mode)
+	if MODE = 0
+	{
+		StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
+	}
 	IfInString,ReplacementText,`%c
 	{
 		StringReplace, ReplacementText, ReplacementText, `%c, %Clipboard%, All
@@ -155,17 +160,15 @@ IfNotExist replacements
 	FileCreateDir, replacements
 IfNotExist resources
 	FileCreateDir, resources
-IfNotExist,texter.ini 
-  FileAppend,[Settings]`nMode=0`n[Hotkey]`nOntheFly=^+H`nManagement=`n[Autocomplete]`nKeys={Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`n[Ignore]`nKeys={Tab}`,{Enter}`,{Space}`n[Cancel]`nKeys={Escape}`n,texter.ini 
-IniRead,cancel,texter.ini,Cancel,Keys ;keys to stop completion, remember {} 
-IniRead,ignore,texter.ini,Ignore,Keys ;keys not to send after completion 
-IniRead,keys,texter.ini,Autocomplete,Keys 
-IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
-IniRead,managehotkey,texter.ini,Hotkey,Management
-IniRead,MODE,texter.ini,Settings,Mode
-IniRead,EnterBox,texter.ini,Triggers,Enter
-IniRead,TabBox,texter.ini,Triggers,Tab
-IniRead,SpaceBox,texter.ini,Triggers,Space
+cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
+ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
+keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}")
+otfhotkey := GetValFromIni("Hotkey","OntheFly","^+H")
+managehotkey := GetValFromIni("Hotkey","Management","")
+MODE := GetValFromIni("Settings","Mode",0)
+EnterBox := GetValFromIni("Triggers","Enter",0)
+TabBox := GetValFromIni("Triggers","Tab",0)
+SpaceBox := GetValFromIni("Triggers","Space",0)
 ;MsgBox,%otfhotkey%
 Loop,Parse,keys,`, 
 { 
@@ -182,6 +185,18 @@ if otfhotkey<>
 if managehotkey <>
 	Hotkey,%managehotkey%,MANAGE
 Return
+
+GetValFromIni(section, key, default)
+{
+	IniRead,IniVal,texter.ini,%section%,%key%
+	if IniVal = ERROR
+	{
+		IniWrite,%default%,texter.ini,%section%,%key%
+		IniVal := default
+	}
+	return IniVal
+}
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 NEWKEY:
@@ -202,12 +217,13 @@ Gui,1: font, s12, Arial
 Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
 Gui,1: Add,Picture,x20 y100,%A_WorkingDir%\resources\texter48x48.png
 Gui,1: Show, W500 H200,Add new hotstring...
+Hotkey,IfWinActive, Add new hotstring
 Hotkey,Esc,ButtonCancel,On
+Hotkey,IfWinActive
 return
 
 ButtonCancel:
 Gui,1: Destroy
-Hotkey,Esc,Off
 return
 
 ButtonOK:
@@ -308,6 +324,9 @@ Gui,4: Add,Text,x10 y70 Center,Texter is a text replacement utility designed to 
 Gui,4:Font,underline bold
 Gui,4:Add,Text,cBlue gTexterHomepage Center x110 y190,Texter homepage
 Gui,4: Show,w310 h220,About Texter
+Hotkey,IfWinActive, About Texter
+Hotkey,Esc,DismissAbout,On
+Hotkey,IfWinActive
 Return
 
 TexterHomepage:
@@ -320,6 +339,10 @@ return
 
 Scripting:
 Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php#advanced
+return
+
+DismissAbout:
+Gui,4: Destroy
 return
 
 HELP:
@@ -342,7 +365,14 @@ Gui,5:Add,Text,x30 y150 cBlue gScripting,Sending advanced keystrokes:
 Gui,5:Font,norm
 Gui,5:Add,Text,x50 y170 w280, Texter is capable of sending advanced keystrokes, like keyboard combinations.  This section lists all of the special characters used in script creation, and offers a few examples of how you might use scripts.
 Gui,5: Show,w350 h300,Texter Help
+Hotkey,IfWinActive, Texter Help
+Hotkey,Esc,DismissHelp,On
+Hotkey,IfWinActive
 Return
+
+DismissHelp:
+Gui,5: Destroy
+return
 
 GetFileList:
 FileList =
@@ -363,22 +393,18 @@ Gui,3: Add,Text,x10 y10,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
 Gui,3: Add,Text,x150 y10,Hotstring Management shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
-if MODE = 0
-{
-	Gui,3: Add,Radio,x10 y70 vModeGroup Checked 1,Compatibility mode (Default)
-	Gui,3: Add,Radio,,Clipboard mode (Faster, but less compatible)
-}
-else
-{
-	Gui,3: Add,Radio,x10 y70 vModeGroup,Compatibility mode (Default)
-	Gui,3: Add,Radio,Checked 1,Clipboard mode (Faster, but less compatible)
-}
+;code optimization -- use mode value to set in initial radio values
+CompatMode := NOT MODE
+Gui,3: Add,Radio,x10 y70 vModeGroup Checked%CompatMode%,Compatibility mode (Default)
+Gui,3: Add,Radio,Checked%MODE%,Clipboard mode (Faster, but less compatible)
 IniRead,OnStartup,texter.ini,Settings,Startup
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
 Gui,3: Add,Button,x150 y145 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x150 y145 w75 GSETTINGSOK Default,&OK
 Gui,3: Add,Button,x230 y145 w75 GSETTINGSCANCEL,&Cancel
 Gui,3: Show,w310 h170,Texter Preferences
+Hotkey,IfWinActive, Texter Preferences
+Hotkey,Esc,SETTINGSCANCEL,On
+Hotkey,IfWinActive
 Return
 
 SETTINGSOK:
@@ -407,15 +433,32 @@ else
 	managehotkey:=smanagehotkey
 	IniWrite,%managehotkey%,texter.ini,Hotkey,Management
 }
-If ModeGroup = 1
-	MODE = 0
-else
-	MODE = 1
+;code optimization -- calculate MODE from ModeGroup
+MODE := ModeGroup - 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
 If Startup = 1
 {
 	IfNotExist %A_StartMenu%\Programs\Startup\Texter.lnk
-		FileCreateShortcut,%A_WorkingDir%\texter.exe,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_WorkingDir%,,Text replacement system tray application,%A_WorkingDir%\resources\texter.ico
+		;Get icon for shortcut link:
+		;1st from compiled EXE
+		if %A_IsCompiled%
+		{
+			IconLocation=%A_ScriptFullPath%
+		}
+		;2nd from icon in resources folder
+		else IfExist %A_WorkingDir%\resources\texter.ico
+		{
+			IconLocation=%A_WorkingDir%\resources\texter.ico
+		}
+		;3rd from the AutoHotkey application itself
+		else
+		{
+			IconLocation=%A_AhkPath%
+		}
+		MsgBox, %IconLocation%
+		;use %A_ScriptFullPath% instead of %A_WorkingDir%\texter.exe
+		;to allow compatibility with source version
+		FileCreateShortcut,%A_ScriptFullPath%,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_WorkingDir%,,Text replacement system tray application,%IconLocation%
 }
 else
 {
@@ -457,6 +500,9 @@ Gui,2: font, s12, Arial
 Gui,2: Add, Button, w35 x20 y320 GAdd,+
 Gui,2: Add, Button, w35 x60 y320 GDelete,-
 Gui,2: Show, W600 H400, Texter Management
+Hotkey,IfWinActive, Texter Management
+Hotkey,Esc,PButtonCancel,On
+Hotkey,IfWinActive
 return
 
 ADD:
@@ -583,7 +629,7 @@ Gosub,SAVE
 return
 
 PButtonCancel:
-Gui, Destroy
+Gui,2: Destroy
 return
 
 PButtonOK:
@@ -674,19 +720,18 @@ else
 return
 
 RESOURCES:
-IfNotExist,%A_ScriptDir%\resources\texter.ico
-	FileInstall,texter.ico,%A_ScriptDir%\resources\texter.ico,1
-IfNotExist,%A_ScriptDir%\resources\replace.wav
-	FileInstall,replace.wav,%A_ScriptDir%\resources\replace.wav,1
-IfNotExist,%A_ScriptDir%\resources\texter48x48.png
-	FileInstall,texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,1
+;code optimization -- removed IfNotExist tests
+;redundant when final arg to FileInstall is 0
+FileInstall,resources\texter.ico,%A_ScriptDir%\resources\texter.ico,0
+FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
+FileInstall,resources\texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,0
 return
 
-AUTOCLOSE:
-:*?B0:(::){Left}
-:*?B0:[::]{Left}
-:*?B0:{::{}}{Left}
-return
+;AUTOCLOSE:
+;:*?B0:(::){Left}
+;:*?B0:[::]{Left}
+;:*?B0:{::{}}{Left}
+;return
 
 EXIT: 
 ExitApp 
