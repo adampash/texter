@@ -2,6 +2,7 @@
 ; Author:         Adam Pash <adam@lifehacker.com>
 ; Gratefully adapted several ideas from AutoClip by Skrommel:
 ;		http://www.donationcoder.com/Software/Skrommel/index.html#AutoClip
+; Huge thanks to Dustin Luck for his contributions
 ; Script Function:
 ;	Designed to implement simple, on-the-fly creation and managment 
 ;	of auto-replacing hotstrings for repetitive text
