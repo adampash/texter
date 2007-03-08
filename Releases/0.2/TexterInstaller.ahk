@@ -1,5 +1,6 @@
 #SingleInstance,Force 
 #NoEnv
+#NoTrayIcon
 Goto,DIRECTORY
 
 DIRECTORY:
@@ -7,7 +8,8 @@ InstallDir =
 Gui, Add, Text,y10 x10,Where would you like to install Texter?
 Gui, Add, Edit, x20 y30 r1 W300 vInstallDir,%A_ProgramFiles%\Texter
 Gui, Add, Button,w80 GBrowse x320 y29,&Browse
-Gui, Add, Button,w80 default GInstall x225 yp+80,&Install
+Gui, Add, Text, y60 x30,Note: If Texter is currently running, close the program before continuing.
+Gui, Add, Button,w80 default GInstall x225 yp+50,&Install
 Gui, Add, Button,w80 xp+90 GCancel,&Cancel
 Gui, Show, W400 H140,Install Texter
 RETURN

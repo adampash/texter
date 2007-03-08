@@ -169,7 +169,7 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
-;MsgBox,%otfhotkey%
+
 Loop,Parse,keys,`, 
 { 
   StringTrimLeft,key,A_LoopField,1 
@@ -455,7 +455,6 @@ If Startup = 1
 		{
 			IconLocation=%A_AhkPath%
 		}
-		MsgBox, %IconLocation%
 		;use %A_ScriptFullPath% instead of %A_WorkingDir%\texter.exe
 		;to allow compatibility with source version
 		FileCreateShortcut,%A_ScriptFullPath%,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_WorkingDir%,,Text replacement system tray application,%IconLocation%
