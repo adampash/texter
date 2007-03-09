@@ -16,6 +16,7 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
+;Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
@@ -126,11 +127,22 @@ else
 	}
 	IfInString,ReplacementText,`%|
 	{
-		StringGetPos,CursorPoint,ReplacementText,`%|
+		;in clipboard mode, CursorPoint & ClipLength need to be calculated after replacing `r`n
+		if MODE = 0
+		{
+			MeasurementText := ReplacementText
+		}
+		else
+		{
+			StringReplace,MeasurementText,ReplacementText,`r`n,`n, All
+		}
+		StringGetPos,CursorPoint,MeasurementText,`%|
 		StringReplace, ReplacementText, ReplacementText, `%|,, All
-		StringLen,ClipLength,ReplacementText
+		StringReplace, MeasurementText, MeasurementText, `%|,, All
+		StringLen,ClipLength,MeasurementText
 		ReturnTo := ClipLength - CursorPoint
 	}
+
 	if MODE = 0
 		SendRaw,%ReplacementText%
 	else
@@ -726,6 +738,11 @@ FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
 FileInstall,resources\texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,0
 return
 
+;AUTOCLOSE:
+;:*?B0:(::){Left}
+;:*?B0:[::]{Left}
+;:*?B0:{::{}}{Left}
+;return
 
 EXIT: 
 ExitApp 

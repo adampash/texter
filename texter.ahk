@@ -127,11 +127,22 @@ else
 	}
 	IfInString,ReplacementText,`%|
 	{
-		StringGetPos,CursorPoint,ReplacementText,`%|
+		;in clipboard mode, CursorPoint & ClipLength need to be calculated after replacing `r`n
+		if MODE = 0
+		{
+			MeasurementText := ReplacementText
+		}
+		else
+		{
+			StringReplace,MeasurementText,ReplacementText,`r`n,`n, All
+		}
+		StringGetPos,CursorPoint,MeasurementText,`%|
 		StringReplace, ReplacementText, ReplacementText, `%|,, All
-		StringLen,ClipLength,ReplacementText
+		StringReplace, MeasurementText, MeasurementText, `%|,, All
+		StringLen,ClipLength,MeasurementText
 		ReturnTo := ClipLength - CursorPoint
 	}
+
 	if MODE = 0
 		SendRaw,%ReplacementText%
 	else
