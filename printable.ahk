@@ -10,6 +10,8 @@ return
 
 
 PrintableList:
+FileDelete,%A_WorkingDir%\resources\Texter Replacement Guide.html
+MsgBox,Delete %A_WorkingDir%\resources\Texter Replacement Guide.html
 List = <html><head><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head></body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><table border="1"><th>Hotstring</th><th>Replacement Text</th><th>Trigger(s)</th>
 Loop, %A_WorkingDir%\replacements\*.txt
 {
@@ -29,8 +31,7 @@ Loop, %A_WorkingDir%\replacements\*.txt
 	
 }
 List = %List%</table></body></html>
-IfExist %A_WorkingDir%\resources\Replacement guide.html
-	FileDelete,%A_WorkingDir%\resources\Texter Replacement Guide.html
 FileAppend,%List%, %A_WorkingDir%\resources\Texter Replacement Guide.html
+MsgBox,Append %A_WorkingDir%\resources\Texter Replacement Guide.html
 Run,%A_WorkingDir%\resources\Texter Replacement Guide.html
 return

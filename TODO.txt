@@ -4,7 +4,8 @@ Features/fixes for 0.3 release:
 - Automatically check for updates
 x Printable list of hotstrings
 - Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
-- Disable Texter through the system tray
+X Disable Texter through the system tray
+x Fix blank hotstring bug (http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1077311)
 
 Features/fixes for 0.2 release:
 x Add option to run at startup

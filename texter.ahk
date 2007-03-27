@@ -28,64 +28,63 @@ Gosub,GetFileList
 Goto Start
 
 START:
-hotkey = 
-input =
-Input,input,V L99,{SC77}
-;MsgBox,End input
-if hotkey In %cancel%
-{
-	Send,%hotkey%
-	Goto,START
-}
-IfNotInString,FileList,%input%|
-{
-	Send,%hotkey%
-	Goto,START
-}
-else if hotkey = `{Space`}
-{
-	if input in %SpaceKeys%
+	hotkey = 
+	Input,input,V L99,{SC77}
+	;MsgBox,End input
+	if hotkey In %cancel%
 	{
-		GoSub, Execute
+		Send,%hotkey%
 		Goto,START
 	}
-	else
+	IfNotInString,FileList,%input%|
 	{
 		Send,%hotkey%
-		Goto,Start
-	}
-}
-else if hotkey = `{Enter`}
-{
-	if input in %EnterKeys%
-	{
-		GoSub, Execute
 		Goto,START
 	}
+	else if hotkey = `{Space`}
+	{
+		if input in %SpaceKeys%
+		{
+			GoSub, Execute
+			Goto,START
+		}
+		else
+		{
+			Send,%hotkey%
+			Goto,Start
+		}
+	}
+	else if hotkey = `{Enter`}
+	{
+		if input in %EnterKeys%
+		{
+			GoSub, Execute
+			Goto,START
+		}
+		else
+		{
+			Send,%hotkey%
+			Goto,Start
+		}
+	}
+	else if hotkey = `{Tab`}
+	{
+		if input in %TabKeys%
+		{
+			GoSub, Execute
+			GoTo,Start
+		}
+		else
+		{
+			Send,%hotkey%
+			Goto,Start
+		}
+	}
 	else
 	{
 		Send,%hotkey%
-		Goto,Start
+		Goto,START
 	}
-}
-else if hotkey = `{Tab`}
-{
-	if input in %TabKeys%
-	{
-		GoSub, Execute
-		GoTo,Start
-	}
-	else
-	{
-		Send,%hotkey%
-		Goto,Start
-	}
-}
-else
-{
-	Send,%hotkey%
-	Goto,START
-}
 return
 
 EXECUTE:
@@ -186,7 +185,8 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
-SpaceBox := GetValFromIni("Settings","Update",1)
+Update := GetValFromIni("Settings","Update",1)
+disable := GetValFromIni("Settings","Disable",0)
 
 Loop,Parse,keys,`,
 { 
@@ -327,6 +327,9 @@ Menu,TRAY,Add,&Preferences...,PREFERENCES
 Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
+Menu,TRAY,Add,&Disable,DISABLE
+if disable = 1
+	Menu,Tray,Check,&Disable
 Menu,TRAY,Add,E&xit,EXIT
 Menu,TRAY,Default,&Manage hotstrings
 Menu,Tray,Tip,Texter
@@ -346,6 +349,29 @@ Hotkey,IfWinActive, About Texter
 Hotkey,Esc,DismissAbout,On
 Hotkey,IfWinActive
 Return
+
+DISABLE:
+Loop,Parse,keys,`,
+{ 
+  StringTrimLeft,key,A_LoopField,1 
+  StringTrimRight,key,key,1 
+  StringLen,length,key 
+  If length=0 
+	Hotkey,$`,Toggle
+  Else 
+	Hotkey,$%key%,Toggle
+} 
+if disable = 0
+{
+	IniWrite,1,texter.ini,Settings,Disable
+	Menu,Tray,Check,&Disable
+}
+else
+{
+	IniWrite,0,texter.ini,Settings,Disable
+	Menu,Tray,Uncheck,&Disable
+}
+return
 
 TexterHomepage:
 Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
@@ -659,20 +685,22 @@ return
 PButtonOK:
 Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,SaveText,,FullText
-GuiControlGet,ToS,,TextOrScript
-FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
-if ToS = Text
-	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
-else
-	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+if ActiveChoice <>
+{
+	GuiControlGet,SaveText,,FullText
+	GuiControlGet,ToS,,TextOrScript
+	FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
+	if ToS = Text
+		FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+	else
+		FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 
-GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,EnterCbox,,EnterCbox
-GuiControlGet,TabCbox,,TabCbox
-GuiControlGet,SpaceCbox,,SpaceCbox
-Gosub,SAVE
-
+	GuiControlGet,ActiveChoice,,Choice
+	GuiControlGet,EnterCbox,,EnterCbox
+	GuiControlGet,TabCbox,,TabCbox
+	GuiControlGet,SpaceCbox,,SpaceCbox
+	Gosub,SAVE
+}
 return
 
 SAVE:
@@ -801,4 +829,5 @@ Run,%A_WorkingDir%\resources\Texter Replacement Guide.html
 return
 
 EXIT: 
+IniWrite,0,texter.ini,Settings,Disable
 ExitApp 
