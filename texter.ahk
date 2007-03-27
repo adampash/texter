@@ -16,7 +16,10 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
+if Update = 1
+	Gosub,UpdateCheck
 ;Gosub,AUTOCLOSE
+
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
@@ -26,7 +29,9 @@ Goto Start
 
 START:
 hotkey = 
+input =
 Input,input,V L99,{SC77}
+;MsgBox,End input
 if hotkey In %cancel%
 {
 	Send,%hotkey%
@@ -181,8 +186,9 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
+SpaceBox := GetValFromIni("Settings","Update",1)
 
-Loop,Parse,keys,`, 
+Loop,Parse,keys,`,
 { 
   StringTrimLeft,key,A_LoopField,1 
   StringTrimRight,key,key,1 
@@ -401,19 +407,26 @@ if otfhotkey<>
 if managehotkey<>
 	HotKey,%managehotkey%,Off
 Gui,3: Destroy
-Gui,3: Add,Text,x10 y10,On-the-Fly shortcut:
+Gui,3: Add, Tab,x5 y5 w300 h190,General|Print|Import|Export
+Gui,3: Add,Text,x10 y40,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
-Gui,3: Add,Text,x150 y10,Hotstring Management shortcut:
+Gui,3: Add,Text,x150 y40,Hotstring Management shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
 ;code optimization -- use mode value to set in initial radio values
 CompatMode := NOT MODE
-Gui,3: Add,Radio,x10 y70 vModeGroup Checked%CompatMode%,Compatibility mode (Default)
+Gui,3: Add,Radio,x10 y100 vModeGroup Checked%CompatMode%,Compatibility mode (Default)
 Gui,3: Add,Radio,Checked%MODE%,Clipboard mode (Faster, but less compatible)
 IniRead,OnStartup,texter.ini,Settings,Startup
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
-Gui,3: Add,Button,x150 y145 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x230 y145 w75 GSETTINGSCANCEL,&Cancel
-Gui,3: Show,w310 h170,Texter Preferences
+Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Tab,2
+Gui,3: Add,Button,w150 h150 gPrintableList,Create Printable Texter Cheatsheet
+Gui,3: Add,Text,xp+160 y50 w125 Wrap,Click the big button to export a printable cheatsheet of all your Texter hotstrings, replacements, and triggers.
+Gui,3: Tab,3
+Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
+Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Show,AutoSize,Texter Preferences
 Hotkey,IfWinActive, Texter Preferences
 Hotkey,Esc,SETTINGSCANCEL,On
 Hotkey,IfWinActive
@@ -736,13 +749,56 @@ RESOURCES:
 FileInstall,resources\texter.ico,%A_ScriptDir%\resources\texter.ico,0
 FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
 FileInstall,resources\texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,0
+FileInstall,CurrentVersion.txt,%A_ScriptDir%\resources\CurrentVersion.txt
 return
 
 ;AUTOCLOSE:
 ;:*?B0:(::){Left}
 ;:*?B0:[::]{Left}
 ;:*?B0:{::{}}{Left}
+
 ;return
+
+UpdateCheck:
+UrlDownloadToFile,http://svn.adampash.com/texter/CurrentVersion.txt,%A_WorkingDir%\resources\VersionCheck.txt
+FileRead, Latest, %A_WorkingDir%\resources\VersionCheck.txt
+FileRead, Current, %A_WorkingDir%\resources\CurrentVersion.txt
+if Latest != %Current%
+{
+	MsgBox,New version available - Would you like to visit the Texter homepage and download the latest version?
+	IfMsgBox,OK
+		Run, http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php
+	;;; Prompt to download new version/installer - download to Texter directory, when download complete, ask to run?
+}
+FileDelete,%A_WorkingDir%\resources\VersionCheck.txt ;; delete version check
+;; make the .exe update the CurrentVersion.txt file with the current info
+return
+
+PrintableList:
+List = <html><head><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head></body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><table border="1"><th>Hotstring</th><th>Replacement Text</th><th>Trigger(s)</th>
+Loop, %A_WorkingDir%\replacements\*.txt
+{
+	trig =
+	hs = %A_LoopFileName%
+	StringReplace, hs, hs, .txt
+	FileRead, rp, %A_WorkingDir%\replacements\%hs%.txt
+	If hs in %EnterKeys%
+		trig = Enter
+	If hs in %TabKeys%
+		trig = %trig% Tab
+	If hs in %SpaceKeys%
+		trig = %trig% Space
+	StringReplace, rp, rp, <,&lt;,All
+	StringReplace, rp, rp, >,&gt;,All
+	List = %List%<tr><td>%hs%</td><td>%rp%</td><td>%trig%</td></tr>
+	
+}
+List = %List%</table></body></html>
+IfExist %A_WorkingDir%\resources\Texter Replacement Guide.html
+	FileDelete,%A_WorkingDir%\resources\Texter Replacement Guide.html
+FileAppend,%List%, %A_WorkingDir%\resources\Texter Replacement Guide.html
+Run,%A_WorkingDir%\resources\Texter Replacement Guide.html
+return
 
 EXIT: 
 ExitApp 
