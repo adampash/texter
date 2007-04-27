@@ -19,11 +19,9 @@ Gosub,TRAYMENU
 if Update = 1
 	Gosub,UpdateCheck
 ;Gosub,AUTOCLOSE
-
-
-FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
-FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
-FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+FileDelete,active\replacements\*.txt
+FileDelete,active\bank\*.csv
+Gosub,BuildActive
 Gosub,GetFileList
 Goto Start
 
@@ -92,7 +90,7 @@ SoundPlay, %A_ScriptDir%\resources\replace.wav
 ReturnTo := 0
 StringLen,BSlength,input
 Send {BS %BSlength%}
-FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
+FileRead, ReplacementText, %A_WorkingDir%\active\replacements\%input%.txt
 
 IfInString,ReplacementText,::scr::
 {
@@ -170,12 +168,19 @@ Send,{SC77}
 Return 
 
 READINI: 
-IfNotExist bank
-	FileCreateDir, bank
-IfNotExist replacements
-	FileCreateDir, replacements
+IfNotExist bundles
+{
+	FileCreateDir, bundles\default\replacements
+	FileCreateDir, bundles\default\bank
+	MsgBox, New dirs created
+}
 IfNotExist resources
 	FileCreateDir, resources
+IfNotExist active
+{
+	FileCreateDir,active\bank
+	FileCreateDir,active\replacements
+}
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
 keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}")
@@ -185,8 +190,10 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
-Update := GetValFromIni("Settings","Update",1)
+Update := GetValFromIni("Settings","Update",0)
 disable := GetValFromIni("Settings","Disable",0)
+active := GetValFromIni("Settings","Active","default")
+IniWrite,0.2,texter.ini,Settings,Version
 
 Loop,Parse,keys,`,
 { 
@@ -202,6 +209,18 @@ if otfhotkey<>
 	Hotkey,%otfhotkey%,NEWKEY
 if managehotkey <>
 	Hotkey,%managehotkey%,MANAGE
+	
+; Update old version of Texter to the new bundled structure
+IfExist bank
+{
+	FileCreateDir,bundles\default\replacements
+	FileCreateDir,bundles\default\bank
+	FileMove, replacements\*.txt, bundles\default\replacements
+	FileMove, bank\*.csv, bundles\default\bank
+	MsgBox,Migration complete
+	FileRemoveDir,replacements
+	FileRemoveDir,bank
+}
 Return
 
 GetValFromIni(section, key, default)
@@ -418,9 +437,32 @@ DismissHelp:
 Gui,5: Destroy
 return
 
+BuildActive:
+;MsgBox,Build
+Loop,bundles\*,2
+{
+	if active contains %A_LoopFileName%
+	{
+		MsgBox,%A_LoopFileName%
+		FileCopy,bundles\%A_LoopFileName%\replacements\*.txt,active\replacements
+		FileRead,tab,bundles\%A_LoopFileName%\bank\tab.csv
+		FileAppend,%tab%,active\bank\tab.csv
+		FileRead,space,bundles\%A_LoopFileName%\bank\space.csv
+		FileAppend,%space%,active\bank\space.csv
+		FileRead,enter,bundles\%A_LoopFileName%\bank\enter.csv
+		FileAppend,%enter%,active\bank\enter.csv
+		IfExist active\replacements\wc.txt
+			MsgBox,%A_LoopFileName% put me here
+	}
+}
+	FileRead, EnterKeys, %A_WorkingDir%\active\bank\enter.csv
+	FileRead, TabKeys, %A_WorkingDir%\active\bank\tab.csv
+	FileRead, SpaceKeys, %A_WorkingDir%\active\bank\space.csv
+return
+
 GetFileList:
 FileList =
-Loop, %A_WorkingDir%\replacements\*.txt
+Loop, %A_WorkingDir%\active\replacements\*.txt
 {
 	FileList = %FileList%%A_LoopFileName%|
 }
@@ -788,19 +830,19 @@ return
 ;return
 
 UpdateCheck:
-UrlDownloadToFile,http://svn.adampash.com/texter/CurrentVersion.txt,%A_WorkingDir%\resources\VersionCheck.txt
-FileRead, Latest, %A_WorkingDir%\resources\VersionCheck.txt
-FileRead, Current, %A_WorkingDir%\resources\CurrentVersion.txt
+UrlDownloadToFile,http://svn.adampash.com/texter/CurrentVersion.txt,%A_WorkingDir%\VersionCheck.txt
+FileReadLine, Latest, %A_WorkingDir%\VersionCheck.txt,1
+IniRead,Current,texter.ini,Settings,Version
 if Latest != %Current%
 {
-	MsgBox,New version available - Would you like to visit the Texter homepage and download the latest version?
-	IfMsgBox,OK
-		Run, http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php
-	;;; Prompt to download new version/installer - download to Texter directory, when download complete, ask to run?
+	MsgBox,4,Texter Update,A new version of Texter is available - Would you like to visit the Texter homepage and download the latest version?
+	IfMsgBox,Yes
+		Run, http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
 }
-FileDelete,%A_WorkingDir%\resources\VersionCheck.txt ;; delete version check
+FileDelete,%A_WorkingDir%\VersionCheck.txt ;; delete version check
 ;; make the .exe update the CurrentVersion.txt file with the current info
 return
+
 
 PrintableList:
 List = <html><head><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head></body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><table border="1"><th>Hotstring</th><th>Replacement Text</th><th>Trigger(s)</th>
@@ -830,4 +872,6 @@ return
 
 EXIT: 
 IniWrite,0,texter.ini,Settings,Disable
+FileDelete,active\replacements\*.txt
+FileDelete,active\bank\*.csv
 ExitApp 

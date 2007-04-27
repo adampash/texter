@@ -1,11 +1,14 @@
 Features/fixes for 0.3 release:
-- Fix blank hotstring bug
 - Import/Export bundles
-- Automatically check for updates
+- Create bundled interface in Texter management - lets you enable/disable a bundle, add or remove to any bundle, etc.
+- Update everything so it's consistent with new bundled structure
+x Automatically check for updates
 x Printable list of hotstrings
 - Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
 X Disable Texter through the system tray
 x Fix blank hotstring bug (http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1077311)
+x For bundles, create an active directory that updates what's enabled at any time
+x Move old replacements to their own directory
 
 Features/fixes for 0.2 release:
 x Add option to run at startup
