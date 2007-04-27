@@ -443,7 +443,7 @@ Loop,bundles\*,2
 {
 	if active contains %A_LoopFileName%
 	{
-		MsgBox,%A_LoopFileName%
+		;MsgBox,%A_LoopFileName%
 		FileCopy,bundles\%A_LoopFileName%\replacements\*.txt,active\replacements
 		FileRead,tab,bundles\%A_LoopFileName%\bank\tab.csv
 		FileAppend,%tab%,active\bank\tab.csv
@@ -572,29 +572,54 @@ if managehotkey <>
 Return
 
 MANAGE:
-GoSub,GetFileList
-StringReplace, FileList, FileList, .txt,,All
+;GoSub,GetFileList
+Bundles =
+Loop,bundles\*,2
+{
+	Bundles = %Bundles%|%A_LoopFileName%
+}
+StringTrimLeft,Bundles,Bundles,1
+;StringReplace, FileList, FileList, .txt,,All
+Gosub,ListBundle
 Gui,2: Destroy
+Gui,2: font, s8, Arial
+Gui,2: Add, Button,w80 default GPButtonOK x420 y395,&OK
+Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial  
-Gui,2: Add, Text,x15 y20, Hotstring:
-Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
-Gui,2: Add,DropDownList,x+20 y15 vTextOrScript, Text||Script
-Gui,2: Add, Edit, xp y45 r12 W460 vFullText,
-Gui,2: Add, Text,y282 x150,Trigger:
+;Gui,2: Add,Text,,Hi!
+
+Gui,2: Add, Text,x15 y40, Hotstring:
+Gosub,GetFileList
+Gui,2: Add, ListBox, x13 y60 r15 W100 vChoice gShowString Sort,%FileList%
+Gui,2: Add,DropDownList,x+20 y35 vTextOrScript, Text||Script
+Gui,2: Add, Edit, xp y65 r12 W460 vFullText,
+Gui,2: Add, Text,y302 x150,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
 Gui,2: font, s8, Arial
 Gui,2: Add,Button,w80 GPButtonSave yp x500,&Save
-Gui,2: Add, Button,w80 default GPButtonOK x420 yp+80,&OK
-Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial 
-Gui,2: Add, Button, w35 x20 y320 GAdd,+
-Gui,2: Add, Button, w35 x60 y320 GDelete,-
-Gui,2: Show, W600 H400, Texter Management
+Gui,2: Add, Button, w35 x20 y340 GAdd,+
+Gui,2: Add, Button, w35 x60 y340 GDelete,-
+
+Gui,2: Add,Tab,x5 y5 h375 w592 vTab gListBundle,%Bundles%
+Gui,2: Show, W602 H425, Texter Management
+
 Hotkey,IfWinActive, Texter Management
 Hotkey,Esc,PButtonCancel,On
 Hotkey,IfWinActive
+return
+
+ListBundle:
+GuiControlGet,ActiveTab,,Tab
+FileList =
+Loop, %A_WorkingDir%\bundles\%ActiveTab%\replacements\*.txt
+{
+	FileList = %FileList%|%A_LoopFileName%
+}
+StringReplace, FileList, FileList, .txt,,All
+GuiControl,,Choice,%FileList%
 return
 
 ADD:
@@ -608,7 +633,7 @@ Loop,Parse,keys,`,
   Else 
     Hotkey,$%key%,Off
 }
-GoSub,Newkey
+GoSub,Newkey ; newkey comes in here - will need to determine whether this was called from hotkey or from GUI
 IfWinExist,Add new hotstring...
 {
 	WinWaitClose,Add new hotstring...,,
@@ -631,33 +656,37 @@ return
 
 DELETE:
 GuiControlGet,ActiveChoice,,Choice
+GuiControlGet,ActiveTab,,Tab
+FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
+FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
+FileRead,space,bundles\%ActiveTab%\bank\space.csv
 MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
-	FileDelete,%A_WorkingDir%\replacements\%ActiveChoice%.txt
-	if ActiveChoice in %EnterKeys%
+	FileDelete,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+	if ActiveChoice in %enter%
 	{
-		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\enter.csv
-		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
-		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+		StringReplace, enter, enter, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		FileAppend,%enter%, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
 	}
 	if ActiveChoice in %TabKeys%
 	{
-		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\tab.csv
-		FileAppend,%TabKeys%, %A_WorkingDir%\bank\tab.csv
-		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+		StringReplace, tab, tab, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		FileAppend,%tab%, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
 	}
 	if ActiveChoice in %SpaceKeys%
 	{
-		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\space.csv
-		FileAppend,%SpaceKeys%, %A_WorkingDir%\bank\space.csv
-		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+		StringReplace, space, space, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		FileAppend,%space%, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
 	}
-	GoSub,GetFileList
-	GuiControl,,Choice,|%FileList%
+	GoSub,ListBundle
+	GuiControl,,Choice,%FileList%
 	GuiControl,,FullText,
 	GuiControl,,EnterCbox,0
 	GuiControl,,TabCbox,0
@@ -669,26 +698,30 @@ return
 
 ShowString:
 GuiControlGet,ActiveChoice,,Choice
-if ActiveChoice in %EnterKeys%
+GuiControlGet,ActiveTab,,Tab
+FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
+FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
+FileRead,space,bundles\%ActiveTab%\bank\space.csv
+if ActiveChoice in %enter%
 {
 	GuiControl,,EnterCbox,1
 }
 else
 	GuiControl,,EnterCbox,0
-if ActiveChoice in %TabKeys%
+if ActiveChoice in %tab%
 {
 	GuiControl,,TabCbox,1
 }
 else
 	GuiControl,,TabCbox,0
-if ActiveChoice in %SpaceKeys%
+if ActiveChoice in %space%
 {
 	GuiControl,,SpaceCbox,1
 }
 else
 	GuiControl,,SpaceCbox,0
 
-FileRead, Text, %A_WorkingDir%\replacements\%ActiveChoice%.txt
+FileRead, Text, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 IfInString,Text,::scr::
 {
 	GuiControl,,TextOrScript,|Text|Script||
@@ -703,14 +736,15 @@ PButtonSave:
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
 GuiControlGet,ToS,,TextOrScript
-FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
+GuiControlGet,ActiveTab,,Tab
+FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 if ToS = Text
 {
-	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+	FileAppend,%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 }
 else
 {
-	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+	FileAppend,::scr::%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 }
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
@@ -727,15 +761,16 @@ return
 PButtonOK:
 Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
+GuiControlGet,ActiveTab,,Tab
 if ActiveChoice <>
 {
 	GuiControlGet,SaveText,,FullText
 	GuiControlGet,ToS,,TextOrScript
-	FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
+	FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 	if ToS = Text
-		FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+		FileAppend,%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 	else
-		FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+		FileAppend,::scr::%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
 
 	GuiControlGet,ActiveChoice,,Choice
 	GuiControlGet,EnterCbox,,EnterCbox
@@ -746,71 +781,77 @@ if ActiveChoice <>
 return
 
 SAVE:
+FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
+FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
+FileRead,space,bundles\%ActiveTab%\bank\space.csv
+GuiControlGet,ActiveTab,,Tab
 if EnterCbox = 1
 {
-	if ActiveChoice in %EnterKeys%
+	if ActiveChoice in %enter%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
-		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
 	}
 }
 else
 {
-	if ActiveChoice in %EnterKeys%
+	if ActiveChoice in %enter%
 	{
-		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\enter.csv
-		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
-		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+		StringReplace, enter, enter, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		FileAppend,%enter%, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
 	}
 }
 if TabCbox = 1
 {
-	if ActiveChoice in %TabKeys%
+	if ActiveChoice in %tab%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\tab.csv
-		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
 	}
 }
 else
 {
-	if ActiveChoice in %TabKeys%
+	if ActiveChoice in %tab%
 	{
-		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\tab.csv
-		FileAppend,%TabKeys%, %A_WorkingDir%\bank\tab.csv
-		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+		StringReplace, tab, tab, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		FileAppend,%tab%, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
 	}
 
 }
 if SpaceCbox = 1
 {
-	if ActiveChoice in %SpaceKeys%
+	if ActiveChoice in %space%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\space.csv
-		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
 	}
 }
 else
 {
-	if ActiveChoice in %SpaceKeys%
+	if ActiveChoice in %space%
 	{
-		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bank\space.csv
-		FileAppend,%SpaceKeys%, %A_WorkingDir%\bank\space.csv
-		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
+		StringReplace, space, space, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		FileAppend,%space%, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
 	}
 
 }
+;;;; TODO: NEED TO IMPLEMENT A WAY TO UPDATE THE CHANGES TO BUNDLES TO THE ACTIVE REPLACEMENTS
+
 return
 
 RESOURCES:
