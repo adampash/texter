@@ -16,73 +16,71 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
-if Update = 1
-	Gosub,UpdateCheck
 ;Gosub,AUTOCLOSE
-FileDelete,active\replacements\*.txt
-FileDelete,active\bank\*.csv
-Gosub,BuildActive
+
+FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
+FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
+FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 Gosub,GetFileList
 Goto Start
 
 START:
-	hotkey = 
-	Input,input,V L99,{SC77}
-	;MsgBox,End input
-	if hotkey In %cancel%
+hotkey = 
+Input,input,V L99,{SC77}
+if hotkey In %cancel%
+{
+	Send,%hotkey%
+	Goto,START
+}
+IfNotInString,FileList,%input%|
+{
+	Send,%hotkey%
+	Goto,START
+}
+else if hotkey = `{Space`}
+{
+	if input in %SpaceKeys%
 	{
-		Send,%hotkey%
+		GoSub, Execute
 		Goto,START
-	}
-	IfNotInString,FileList,%input%|
-	{
-		Send,%hotkey%
-		Goto,START
-	}
-	else if hotkey = `{Space`}
-	{
-		if input in %SpaceKeys%
-		{
-			GoSub, Execute
-			Goto,START
-		}
-		else
-		{
-			Send,%hotkey%
-			Goto,Start
-		}
-	}
-	else if hotkey = `{Enter`}
-	{
-		if input in %EnterKeys%
-		{
-			GoSub, Execute
-			Goto,START
-		}
-		else
-		{
-			Send,%hotkey%
-			Goto,Start
-		}
-	}
-	else if hotkey = `{Tab`}
-	{
-		if input in %TabKeys%
-		{
-			GoSub, Execute
-			GoTo,Start
-		}
-		else
-		{
-			Send,%hotkey%
-			Goto,Start
-		}
 	}
 	else
 	{
 		Send,%hotkey%
+		Goto,Start
+	}
+}
+else if hotkey = `{Enter`}
+{
+	if input in %EnterKeys%
+	{
+		GoSub, Execute
 		Goto,START
 	}
+	else
+	{
+		Send,%hotkey%
+		Goto,Start
+	}
+}
+else if hotkey = `{Tab`}
+{
+	if input in %TabKeys%
+	{
+		GoSub, Execute
+		GoTo,Start
+	}
+	else
+	{
+		Send,%hotkey%
+		Goto,Start
+	}
+}
+else
+{
+	Send,%hotkey%
+	Goto,START
+}
 return
 
 EXECUTE:
@@ -90,7 +88,7 @@ SoundPlay, %A_ScriptDir%\resources\replace.wav
 ReturnTo := 0
 StringLen,BSlength,input
 Send {BS %BSlength%}
-FileRead, ReplacementText, %A_WorkingDir%\active\replacements\%input%.txt
+FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 
 IfInString,ReplacementText,::scr::
 {
@@ -168,34 +166,39 @@ Send,{SC77}
 Return 
 
 READINI: 
-IfNotExist bundles
-{
-	FileCreateDir, bundles\default\replacements
-	FileCreateDir, bundles\default\bank
-	MsgBox, New dirs created
-}
+IfNotExist bank
+	FileCreateDir, bank
+IfNotExist replacements
+	FileCreateDir, replacements
 IfNotExist resources
 	FileCreateDir, resources
-IfNotExist active
+IfNotExist texter.ini 
 {
-	FileCreateDir,active\bank
-	FileCreateDir,active\replacements
-}
+	MsgBox,4,Check for Updates?,Would you like app to automatically check for updates when it's run?
+	IfMsgBox,Yes
+		updatereply = 1
+	else
+		updatereply = 0
+}	
+
+IniWrite,0.2,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
-keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}")
+keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Esc}`,{Up}`,{Down}`,{LButton}")
 otfhotkey := GetValFromIni("Hotkey","OntheFly","^+H")
 managehotkey := GetValFromIni("Hotkey","Management","")
 MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
-Update := GetValFromIni("Settings","Update",0)
-disable := GetValFromIni("Settings","Disable",0)
-active := GetValFromIni("Settings","Active","default")
-IniWrite,0.2,texter.ini,Settings,Version
+Update := GetValFromIni("Settings","UpdateCheck",updatereply)
+if Update =
+	IniWrite,1,texter.ini,Settings,UpdateCheck
+if Update = 1
+	SetTimer,UpdateCheck,10000
 
-Loop,Parse,keys,`,
+
+Loop,Parse,keys,`, 
 { 
   StringTrimLeft,key,A_LoopField,1 
   StringTrimRight,key,key,1 
@@ -209,18 +212,6 @@ if otfhotkey<>
 	Hotkey,%otfhotkey%,NEWKEY
 if managehotkey <>
 	Hotkey,%managehotkey%,MANAGE
-	
-; Update old version of Texter to the new bundled structure
-IfExist bank
-{
-	FileCreateDir,bundles\default\replacements
-	FileCreateDir,bundles\default\bank
-	FileMove, replacements\*.txt, bundles\default\replacements
-	FileMove, bank\*.csv, bundles\default\bank
-	MsgBox,Migration complete
-	FileRemoveDir,replacements
-	FileRemoveDir,bank
-}
 Return
 
 GetValFromIni(section, key, default)
@@ -437,32 +428,9 @@ DismissHelp:
 Gui,5: Destroy
 return
 
-BuildActive:
-;MsgBox,Build
-Loop,bundles\*,2
-{
-	if active contains %A_LoopFileName%
-	{
-		;MsgBox,%A_LoopFileName%
-		FileCopy,bundles\%A_LoopFileName%\replacements\*.txt,active\replacements
-		FileRead,tab,bundles\%A_LoopFileName%\bank\tab.csv
-		FileAppend,%tab%,active\bank\tab.csv
-		FileRead,space,bundles\%A_LoopFileName%\bank\space.csv
-		FileAppend,%space%,active\bank\space.csv
-		FileRead,enter,bundles\%A_LoopFileName%\bank\enter.csv
-		FileAppend,%enter%,active\bank\enter.csv
-		IfExist active\replacements\wc.txt
-			MsgBox,%A_LoopFileName% put me here
-	}
-}
-	FileRead, EnterKeys, %A_WorkingDir%\active\bank\enter.csv
-	FileRead, TabKeys, %A_WorkingDir%\active\bank\tab.csv
-	FileRead, SpaceKeys, %A_WorkingDir%\active\bank\space.csv
-return
-
 GetFileList:
 FileList =
-Loop, %A_WorkingDir%\active\replacements\*.txt
+Loop, %A_WorkingDir%\replacements\*.txt
 {
 	FileList = %FileList%%A_LoopFileName%|
 }
@@ -475,7 +443,7 @@ if otfhotkey<>
 if managehotkey<>
 	HotKey,%managehotkey%,Off
 Gui,3: Destroy
-Gui,3: Add, Tab,x5 y5 w300 h190,General|Print|Import|Export
+Gui,3: Add, Tab,x5 y5 w300 h190,General|Print ;|Import|Export Add these later
 Gui,3: Add,Text,x10 y40,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
 Gui,3: Add,Text,x150 y40,Hotstring Management shortcut:
@@ -486,14 +454,16 @@ Gui,3: Add,Radio,x10 y100 vModeGroup Checked%CompatMode%,Compatibility mode (Def
 Gui,3: Add,Radio,Checked%MODE%,Clipboard mode (Faster, but less compatible)
 IniRead,OnStartup,texter.ini,Settings,Startup
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
+IniRead,Update,texter.ini,Settings,UpdateCheck
+Gui,3: Add,Checkbox, vUpdate x20 yp+20 Checked%Update%,Check for updates at launch?
 Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
 Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
 Gui,3: Tab,2
 Gui,3: Add,Button,w150 h150 gPrintableList,Create Printable Texter Cheatsheet
 Gui,3: Add,Text,xp+160 y50 w125 Wrap,Click the big button to export a printable cheatsheet of all your Texter hotstrings, replacements, and triggers.
-Gui,3: Tab,3
-Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
+;Gui,3: Tab,3
+;Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
+;Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
 Gui,3: Show,AutoSize,Texter Preferences
 Hotkey,IfWinActive, Texter Preferences
 Hotkey,Esc,SETTINGSCANCEL,On
@@ -529,6 +499,7 @@ else
 ;code optimization -- calculate MODE from ModeGroup
 MODE := ModeGroup - 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
+IniWrite,%Update%,texter.ini,Settings,UpdateCheck
 If Startup = 1
 {
 	IfNotExist %A_StartMenu%\Programs\Startup\Texter.lnk
@@ -572,54 +543,29 @@ if managehotkey <>
 Return
 
 MANAGE:
-;GoSub,GetFileList
-Bundles =
-Loop,bundles\*,2
-{
-	Bundles = %Bundles%|%A_LoopFileName%
-}
-StringTrimLeft,Bundles,Bundles,1
-;StringReplace, FileList, FileList, .txt,,All
-Gosub,ListBundle
+GoSub,GetFileList
+StringReplace, FileList, FileList, .txt,,All
 Gui,2: Destroy
-Gui,2: font, s8, Arial
-Gui,2: Add, Button,w80 default GPButtonOK x420 y395,&OK
-Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial  
-;Gui,2: Add,Text,,Hi!
-
-Gui,2: Add, Text,x15 y40, Hotstring:
-Gosub,GetFileList
-Gui,2: Add, ListBox, x13 y60 r15 W100 vChoice gShowString Sort,%FileList%
-Gui,2: Add,DropDownList,x+20 y35 vTextOrScript, Text||Script
-Gui,2: Add, Edit, xp y65 r12 W460 vFullText,
-Gui,2: Add, Text,y302 x150,Trigger:
+Gui,2: Add, Text,x15 y20, Hotstring:
+Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
+Gui,2: Add,DropDownList,x+20 y15 vTextOrScript, Text||Script
+Gui,2: Add, Edit, xp y45 r12 W460 vFullText,
+Gui,2: Add, Text,y282 x150,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
 Gui,2: font, s8, Arial
 Gui,2: Add,Button,w80 GPButtonSave yp x500,&Save
+Gui,2: Add, Button,w80 default GPButtonOK x420 yp+80,&OK
+Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial 
-Gui,2: Add, Button, w35 x20 y340 GAdd,+
-Gui,2: Add, Button, w35 x60 y340 GDelete,-
-
-Gui,2: Add,Tab,x5 y5 h375 w592 vTab gListBundle,%Bundles%
-Gui,2: Show, W602 H425, Texter Management
-
+Gui,2: Add, Button, w35 x20 y320 GAdd,+
+Gui,2: Add, Button, w35 x60 y320 GDelete,-
+Gui,2: Show, W600 H400, Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,Esc,PButtonCancel,On
 Hotkey,IfWinActive
-return
-
-ListBundle:
-GuiControlGet,ActiveTab,,Tab
-FileList =
-Loop, %A_WorkingDir%\bundles\%ActiveTab%\replacements\*.txt
-{
-	FileList = %FileList%|%A_LoopFileName%
-}
-StringReplace, FileList, FileList, .txt,,All
-GuiControl,,Choice,%FileList%
 return
 
 ADD:
@@ -633,7 +579,7 @@ Loop,Parse,keys,`,
   Else 
     Hotkey,$%key%,Off
 }
-GoSub,Newkey ; newkey comes in here - will need to determine whether this was called from hotkey or from GUI
+GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
 	WinWaitClose,Add new hotstring...,,
@@ -656,37 +602,33 @@ return
 
 DELETE:
 GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,ActiveTab,,Tab
-FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
-FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
-FileRead,space,bundles\%ActiveTab%\bank\space.csv
 MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
-	FileDelete,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
-	if ActiveChoice in %enter%
+	FileDelete,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+	if ActiveChoice in %EnterKeys%
 	{
-		StringReplace, enter, enter, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
-		FileAppend,%enter%, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
-		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\enter.csv
+		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
+		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 	}
 	if ActiveChoice in %TabKeys%
 	{
-		StringReplace, tab, tab, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
-		FileAppend,%tab%, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
-		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\tab.csv
+		FileAppend,%TabKeys%, %A_WorkingDir%\bank\tab.csv
+		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 	}
 	if ActiveChoice in %SpaceKeys%
 	{
-		StringReplace, space, space, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
-		FileAppend,%space%, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
-		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\space.csv
+		FileAppend,%SpaceKeys%, %A_WorkingDir%\bank\space.csv
+		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 	}
-	GoSub,ListBundle
-	GuiControl,,Choice,%FileList%
+	GoSub,GetFileList
+	GuiControl,,Choice,|%FileList%
 	GuiControl,,FullText,
 	GuiControl,,EnterCbox,0
 	GuiControl,,TabCbox,0
@@ -698,30 +640,26 @@ return
 
 ShowString:
 GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,ActiveTab,,Tab
-FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
-FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
-FileRead,space,bundles\%ActiveTab%\bank\space.csv
-if ActiveChoice in %enter%
+if ActiveChoice in %EnterKeys%
 {
 	GuiControl,,EnterCbox,1
 }
 else
 	GuiControl,,EnterCbox,0
-if ActiveChoice in %tab%
+if ActiveChoice in %TabKeys%
 {
 	GuiControl,,TabCbox,1
 }
 else
 	GuiControl,,TabCbox,0
-if ActiveChoice in %space%
+if ActiveChoice in %SpaceKeys%
 {
 	GuiControl,,SpaceCbox,1
 }
 else
 	GuiControl,,SpaceCbox,0
 
-FileRead, Text, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+FileRead, Text, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 IfInString,Text,::scr::
 {
 	GuiControl,,TextOrScript,|Text|Script||
@@ -736,15 +674,14 @@ PButtonSave:
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,SaveText,,FullText
 GuiControlGet,ToS,,TextOrScript
-GuiControlGet,ActiveTab,,Tab
-FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
 if ToS = Text
 {
-	FileAppend,%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 }
 else
 {
-	FileAppend,::scr::%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 }
 GuiControlGet,ActiveChoice,,Choice
 GuiControlGet,EnterCbox,,EnterCbox
@@ -761,97 +698,88 @@ return
 PButtonOK:
 Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,ActiveTab,,Tab
-if ActiveChoice <>
-{
-	GuiControlGet,SaveText,,FullText
-	GuiControlGet,ToS,,TextOrScript
-	FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
-	if ToS = Text
-		FileAppend,%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
-	else
-		FileAppend,::scr::%SaveText%,%A_WorkingDir%\bundles\%ActiveTab%\replacements\%ActiveChoice%.txt
+GuiControlGet,SaveText,,FullText
+GuiControlGet,ToS,,TextOrScript
+FileDelete, %A_WorkingDir%\replacements\%ActiveChoice%.txt
+if ToS = Text
+	FileAppend,%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
+else
+	FileAppend,::scr::%SaveText%,%A_WorkingDir%\replacements\%ActiveChoice%.txt
 
-	GuiControlGet,ActiveChoice,,Choice
-	GuiControlGet,EnterCbox,,EnterCbox
-	GuiControlGet,TabCbox,,TabCbox
-	GuiControlGet,SpaceCbox,,SpaceCbox
-	Gosub,SAVE
-}
+GuiControlGet,ActiveChoice,,Choice
+GuiControlGet,EnterCbox,,EnterCbox
+GuiControlGet,TabCbox,,TabCbox
+GuiControlGet,SpaceCbox,,SpaceCbox
+Gosub,SAVE
+
 return
 
 SAVE:
-FileRead,enter,bundles\%ActiveTab%\bank\enter.csv
-FileRead,tab,bundles\%ActiveTab%\bank\tab.csv
-FileRead,space,bundles\%ActiveTab%\bank\space.csv
-GuiControlGet,ActiveTab,,Tab
 if EnterCbox = 1
 {
-	if ActiveChoice in %enter%
+	if ActiveChoice in %EnterKeys%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
-		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\enter.csv
+		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 	}
 }
 else
 {
-	if ActiveChoice in %enter%
+	if ActiveChoice in %EnterKeys%
 	{
-		StringReplace, enter, enter, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
-		FileAppend,%enter%, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
-		;FileRead, EnterKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\enter.csv
+		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\enter.csv
+		FileAppend,%EnterKeys%, %A_WorkingDir%\bank\enter.csv
+		FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
 	}
 }
 if TabCbox = 1
 {
-	if ActiveChoice in %tab%
+	if ActiveChoice in %TabKeys%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
-		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\tab.csv
+		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 	}
 }
 else
 {
-	if ActiveChoice in %tab%
+	if ActiveChoice in %TabKeys%
 	{
-		StringReplace, tab, tab, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
-		FileAppend,%tab%, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
-		;FileRead, TabKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\tab.csv
+		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\tab.csv
+		FileAppend,%TabKeys%, %A_WorkingDir%\bank\tab.csv
+		FileRead, TabKeys, %A_WorkingDir%\bank\tab.csv
 	}
 
 }
 if SpaceCbox = 1
 {
-	if ActiveChoice in %space%
+	if ActiveChoice in %SpaceKeys%
 	{
 	}
 	else
 	{
-		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
-		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		FileAppend,%ActiveChoice%`,, %A_WorkingDir%\bank\space.csv
+		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 	}
 }
 else
 {
-	if ActiveChoice in %space%
+	if ActiveChoice in %SpaceKeys%
 	{
-		StringReplace, space, space, %ActiveChoice%`,,,All
-		FileDelete, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
-		FileAppend,%space%, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
-		;FileRead, SpaceKeys, %A_WorkingDir%\bundles\%ActiveTab%\bank\space.csv
+		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
+		FileDelete, %A_WorkingDir%\bank\space.csv
+		FileAppend,%SpaceKeys%, %A_WorkingDir%\bank\space.csv
+		FileRead, SpaceKeys, %A_WorkingDir%\bank\space.csv
 	}
 
 }
-;;;; TODO: NEED TO IMPLEMENT A WAY TO UPDATE THE CHANGES TO BUNDLES TO THE ACTIVE REPLACEMENTS
-
 return
 
 RESOURCES:
@@ -860,30 +788,13 @@ RESOURCES:
 FileInstall,resources\texter.ico,%A_ScriptDir%\resources\texter.ico,0
 FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
 FileInstall,resources\texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,0
-FileInstall,CurrentVersion.txt,%A_ScriptDir%\resources\CurrentVersion.txt
 return
 
 ;AUTOCLOSE:
 ;:*?B0:(::){Left}
 ;:*?B0:[::]{Left}
 ;:*?B0:{::{}}{Left}
-
 ;return
-
-UpdateCheck:
-UrlDownloadToFile,http://svn.adampash.com/texter/CurrentVersion.txt,%A_WorkingDir%\VersionCheck.txt
-FileReadLine, Latest, %A_WorkingDir%\VersionCheck.txt,1
-IniRead,Current,texter.ini,Settings,Version
-if Latest != %Current%
-{
-	MsgBox,4,Texter Update,A new version of Texter is available - Would you like to visit the Texter homepage and download the latest version?
-	IfMsgBox,Yes
-		Run, http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
-}
-FileDelete,%A_WorkingDir%\VersionCheck.txt ;; delete version check
-;; make the .exe update the CurrentVersion.txt file with the current info
-return
-
 
 PrintableList:
 List = <html><head><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head></body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><table border="1"><th>Hotstring</th><th>Replacement Text</th><th>Trigger(s)</th>
@@ -911,8 +822,28 @@ FileAppend,%List%, %A_WorkingDir%\resources\Texter Replacement Guide.html
 Run,%A_WorkingDir%\resources\Texter Replacement Guide.html
 return
 
+UpdateCheck:
+update("texter")
+return
+
+update(program)
+{
+	SetTimer, UpdateCheck, Off
+	UrlDownloadToFile,http://svn.adampash.com/%program%/CurrentVersion.txt,%A_WorkingDir%\VersionCheck.txt
+	if ErrorLevel = 0
+	{
+		FileReadLine, Latest, %A_WorkingDir%\VersionCheck.txt,1
+		IniRead,Current,%program%.ini,Preferences,Version
+		if (Latest != Current)
+		{
+			MsgBox,4,A new version of Texter is available!,Would you like to visit the Texter homepage and download the latest version?
+			IfMsgBox,Yes
+				Goto,TexterHomepage
+		}
+		FileDelete,%A_WorkingDir%\VersionCheck.txt ;; delete version check
+	}
+}
+return
+
 EXIT: 
-IniWrite,0,texter.ini,Settings,Disable
-FileDelete,active\replacements\*.txt
-FileDelete,active\bank\*.csv
 ExitApp 
