@@ -180,11 +180,11 @@ IfNotExist texter.ini
 	else
 		updatereply = 0
 }	
-
 IniWrite,0.2,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
-keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Esc}`,{Up}`,{Down}`,{LButton}")
+IniWrite,{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Up}`,{Down},texter.ini,Autocomplete,Keys
+keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Esc}`,{Up}`,{Down}")
 otfhotkey := GetValFromIni("Hotkey","OntheFly","^+H")
 managehotkey := GetValFromIni("Hotkey","Management","")
 MODE := GetValFromIni("Settings","Mode",0)
@@ -197,7 +197,6 @@ if Update =
 if Update = 1
 	SetTimer,UpdateCheck,10000
 
-
 Loop,Parse,keys,`, 
 { 
   StringTrimLeft,key,A_LoopField,1 
@@ -207,7 +206,77 @@ Loop,Parse,keys,`,
     Hotkey,$`,,HOTKEYS 
   Else 
     Hotkey,$%key%,HOTKEYS 
-} 
+}
+~LButton::Send,{SC77}
+$!Tab::
+{
+	pressed = 0
+	Loop {
+		Sleep,10
+		GetKeyState,altKey,Alt,P
+		GetKeyState,tabKey,Tab,P
+		if (altKey = "D") and (tabKey = "D")
+		{
+			if pressed = 0
+			{
+				pressed = 1
+				Send,{Alt down}{Tab}
+				continue
+			}
+			else
+			{
+				continue
+			}
+		}
+		else if (altKey = "D")
+		{
+			pressed = 0
+			continue
+		}
+		else
+		{
+			Send,{Alt up}
+			break
+		}
+	}
+	Send,{SC77}
+}
+$!+Tab::
+{
+	pressed = 0
+	Loop {
+		Sleep,10
+		GetKeyState,altKey,Alt,P
+		GetKeyState,tabKey,Tab,P
+		GetKeyState,shiftKey,Shift,P
+		if (altKey = "D") and (tabKey = "D") and (shiftKey = "D")
+		{
+			if pressed = 0
+			{
+				pressed = 1
+				Send,{Alt down}{Shift down}{Tab}
+				continue
+			}
+			else
+			{
+				continue
+			}
+		}
+		else if (altKey = "D")
+		{
+			pressed = 0
+			Send,{Shift up}
+			break
+		}
+		else
+		{
+			Send,{Alt up}{Shift up}
+			break
+		}
+	}
+	;Send,{SC77}
+}
+
 if otfhotkey<>
 	Hotkey,%otfhotkey%,NEWKEY
 if managehotkey <>
