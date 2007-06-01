@@ -10,7 +10,7 @@
 #SingleInstance,Force 
 #NoEnv
 AutoTrim,off
-SetKeyDelay,0 
+SetKeyDelay,-1
 SetWinDelay,0 
 SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
@@ -29,12 +29,12 @@ hotkey =
 Input,input,V L99,{SC77}
 if hotkey In %cancel%
 {
-	Send,%hotkey%
+	SendInput,%hotkey%
 	Goto,START
 }
 IfNotInString,FileList,%input%|
 {
-	Send,%hotkey%
+	SendInput,%hotkey%
 	Goto,START
 }
 else if hotkey = `{Space`}
@@ -46,7 +46,7 @@ else if hotkey = `{Space`}
 	}
 	else
 	{
-		Send,%hotkey%
+		SendInput,%hotkey%
 		Goto,Start
 	}
 }
@@ -59,7 +59,7 @@ else if hotkey = `{Enter`}
 	}
 	else
 	{
-		Send,%hotkey%
+		SendInput,%hotkey%
 		Goto,Start
 	}
 }
@@ -72,22 +72,24 @@ else if hotkey = `{Tab`}
 	}
 	else
 	{
-		Send,%hotkey%
+		SendInput,%hotkey%
 		Goto,Start
 	}
 }
 else
 {
-	Send,%hotkey%
+	SendInput,%hotkey%
 	Goto,START
 }
 return
 
 EXECUTE:
+SendMode Play
+; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
 SoundPlay, %A_ScriptDir%\resources\replace.wav
 ReturnTo := 0
 StringLen,BSlength,input
-Send {BS %BSlength%}
+Send, {BS %BSlength%}
 FileRead, ReplacementText, %A_WorkingDir%\replacements\%input%.txt
 
 IfInString,ReplacementText,::scr::
@@ -95,7 +97,7 @@ IfInString,ReplacementText,::scr::
 	;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
 	StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
 	StringReplace,Script,ReplacementText,::scr::,,
-	Send,%Script%
+	SendEvent,%Script%
 	return
 }
 else
@@ -144,17 +146,34 @@ else
 	}
 
 	if MODE = 0
-		SendRaw,%ReplacementText%
+	{
+		if ReturnTo > 0
+		{
+			if ReplacementText contains !,#,^,+
+			{
+				SendRaw, %ReplacementText%
+				Send,{Left %ReturnTo%}
+			}
+			else
+				Send,%ReplacementText%{Left %ReturnTo%}
+		}
+		else
+			SendRaw,%ReplacementText%
+	}
 	else
 	{
 		oldClip = %Clipboard%
 		Clipboard = %ReplacementText%
-		Send,^v
+		if ReturnTo > 0
+			Send,^v{Left %ReturnTo%}
+		else
+			Send,^v
 		Clipboard = %oldClip%
 	}
-	if ReturnTo > 0
-	Send {Left %ReturnTo%}
+;	if ReturnTo > 0
+;		Send, {Left %ReturnTo%}
 }
+SendMode Event
 Return
 
 HOTKEYS: 
@@ -207,6 +226,12 @@ Loop,Parse,keys,`,
   Else 
     Hotkey,$%key%,HOTKEYS 
 }
+
+if otfhotkey <>
+	Hotkey,%otfhotkey%,NEWKEY
+if managehotkey <>
+	Hotkey,%managehotkey%,MANAGE
+
 ~LButton::Send,{SC77}
 $!Tab::
 {
@@ -277,10 +302,6 @@ $!+Tab::
 	;Send,{SC77}
 }
 
-if otfhotkey<>
-	Hotkey,%otfhotkey%,NEWKEY
-if managehotkey <>
-	Hotkey,%managehotkey%,MANAGE
 Return
 
 GetValFromIni(section, key, default)
@@ -402,7 +423,7 @@ Menu,TRAY,DeleteAll
 Menu,TRAY,Add,&Manage hotstrings,MANAGE
 Menu,TRAY,Add,&Create new hotstring,NEWKEY
 Menu,TRAY,Add
-Menu,TRAY,Add,&Preferences...,PREFERENCES
+Menu,TRAY,Add,P&references...,PREFERENCES
 Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
@@ -412,6 +433,7 @@ if disable = 1
 Menu,TRAY,Add,E&xit,EXIT
 Menu,TRAY,Default,&Manage hotstrings
 Menu,Tray,Tip,Texter
+Menu,TRAY,Icon,%A_WorkingDir%\resources\texter.ico
 Return
 
 ABOUT:
@@ -631,7 +653,7 @@ Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
 Gui,2: font, s12, Arial 
 Gui,2: Add, Button, w35 x20 y320 GAdd,+
 Gui,2: Add, Button, w35 x60 y320 GDelete,-
-Gui,2: Show, W600 H400, Texter Management
+Gui,2: Show, W600 h400, Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,Esc,PButtonCancel,On
 Hotkey,IfWinActive
@@ -857,6 +879,7 @@ RESOURCES:
 FileInstall,resources\texter.ico,%A_ScriptDir%\resources\texter.ico,0
 FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
 FileInstall,resources\texter48x48.png,%A_ScriptDir%\resources\texter48x48.png,0
+FileInstall,resources\style.css,%A_ScriptDir%\resources\style.css,0
 return
 
 ;AUTOCLOSE:
@@ -866,9 +889,11 @@ return
 ;return
 
 PrintableList:
-List = <html><head><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head></body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><table border="1"><th>Hotstring</th><th>Replacement Text</th><th>Trigger(s)</th>
+alt := 0
+List = <html xmlns="http://www.w3.org/1999/xhtml"><head><link type="text/css" href="style.css" rel="stylesheet"><title>Texter Hotstrings and Replacement Text Cheatsheet</title></head><body><h2>Texter Hostrings and Replacement Text Cheatsheet</h2><span class="hotstring" style="border:none`; color:black`;"><h3>Hotstring</h3></span><span class="replacement" style="border:none`;"><h3>Replacement Text</h3></span><span class="trigger" style="border:none`;"><h3>Trigger(s)</h3></span>
 Loop, %A_WorkingDir%\replacements\*.txt
 {
+	alt := 1 - alt
 	trig =
 	hs = %A_LoopFileName%
 	StringReplace, hs, hs, .txt
@@ -881,10 +906,10 @@ Loop, %A_WorkingDir%\replacements\*.txt
 		trig = %trig% Space
 	StringReplace, rp, rp, <,&lt;,All
 	StringReplace, rp, rp, >,&gt;,All
-	List = %List%<tr><td>%hs%</td><td>%rp%</td><td>%trig%</td></tr>
+	List = %List%<div class="row%alt%"><span class="hotstring">%hs%</span><span class="replacement">%rp%</span><span class="trigger">%trig%</span></div><br />
 	
 }
-List = %List%</table></body></html>
+List = %List%</body></html>
 IfExist %A_WorkingDir%\resources\Texter Replacement Guide.html
 	FileDelete,%A_WorkingDir%\resources\Texter Replacement Guide.html
 FileAppend,%List%, %A_WorkingDir%\resources\Texter Replacement Guide.html
