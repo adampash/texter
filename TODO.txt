@@ -15,6 +15,7 @@ X Disable Texter through the system tray
 x Fix blank hotstring bug (http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1077311)
 x Changed replacment method so that it's more compatible with games/apps
 x New icon
+x Added automatic update checks
 
 Features/fixes for 0.2 release:
 x Add option to run at startup

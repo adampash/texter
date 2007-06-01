@@ -16,6 +16,7 @@ SetWorkingDir, "%A_ScriptDir%"
 Gosub,READINI
 Gosub,RESOURCES
 Gosub,TRAYMENU
+Gosub,UpdateCheck
 ;Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %A_WorkingDir%\bank\enter.csv
@@ -191,14 +192,6 @@ IfNotExist replacements
 	FileCreateDir, replacements
 IfNotExist resources
 	FileCreateDir, resources
-IfNotExist texter.ini 
-{
-	MsgBox,4,Check for Updates?,Would you like app to automatically check for updates when it's run?
-	IfMsgBox,Yes
-		updatereply = 1
-	else
-		updatereply = 0
-}	
 IniWrite,0.2,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
@@ -210,11 +203,6 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
-Update := GetValFromIni("Settings","UpdateCheck",updatereply)
-if Update =
-	IniWrite,1,texter.ini,Settings,UpdateCheck
-if Update = 1
-	SetTimer,UpdateCheck,10000
 
 Loop,Parse,keys,`, 
 { 
@@ -299,7 +287,6 @@ $!+Tab::
 			break
 		}
 	}
-	;Send,{SC77}
 }
 
 Return
@@ -444,7 +431,7 @@ Gui,4: Add, Text,x90 y5,Texter
 Gui,4: font, s9, Arial 
 Gui,4: Add,Text,x10 y70 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker under the GNU Public License.`nFor details on how to use Texter, check out the
 Gui,4:Font,underline bold
-Gui,4:Add,Text,cBlue gTexterHomepage Center x110 y190,Texter homepage
+Gui,4:Add,Text,cBlue gHomepage Center x110 y190,Texter homepage
 Gui,4: Show,w310 h220,About Texter
 Hotkey,IfWinActive, About Texter
 Hotkey,Esc,DismissAbout,On
@@ -474,7 +461,7 @@ else
 }
 return
 
-TexterHomepage:
+Homepage:
 Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php
 return
 
@@ -498,7 +485,7 @@ Gui,5: Add, Text,x125 y5,Texter
 Gui,5: font, s9, Arial 
 Gui,5: Add,Text,x19 y255 w300 center,All of Texter's documentation can be found online at the
 Gui,5:Font,underline bold
-Gui,5:Add,Text,cBlue gTexterHomepage Center x125 y275,Texter homepage
+Gui,5:Add,Text,cBlue gHomepage Center x125 y275,Texter homepage
 Gui,5: font, s9 norm, Arial 
 Gui,5: Add,Text,x10 y70 w300,For help by topic, click on one of the following:
 Gui,5:Font,underline bold
@@ -545,7 +532,7 @@ Gui,3: Add,Radio,x10 y100 vModeGroup Checked%CompatMode%,Compatibility mode (Def
 Gui,3: Add,Radio,Checked%MODE%,Clipboard mode (Faster, but less compatible)
 IniRead,OnStartup,texter.ini,Settings,Startup
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
-IniRead,Update,texter.ini,Settings,UpdateCheck
+IniRead,Update,texter.ini,Preferences,UpdateCheck
 Gui,3: Add,Checkbox, vUpdate x20 yp+20 Checked%Update%,Check for updates at launch?
 Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
 Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
@@ -590,7 +577,7 @@ else
 ;code optimization -- calculate MODE from ModeGroup
 MODE := ModeGroup - 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
-IniWrite,%Update%,texter.ini,Settings,UpdateCheck
+IniWrite,%Update%,texter.ini,Preferences,UpdateCheck
 If Startup = 1
 {
 	IfNotExist %A_StartMenu%\Programs\Startup\Texter.lnk
@@ -916,28 +903,44 @@ FileAppend,%List%, %A_WorkingDir%\resources\Texter Replacement Guide.html
 Run,%A_WorkingDir%\resources\Texter Replacement Guide.html
 return
 
-UpdateCheck:
+
+UpdateCheck: ;;;;;;; Update the version number on each new release ;;;;;;;;;;;;;
+IfNotExist texter.ini 
+{
+	MsgBox,4,Check for Updates?,Would you like to automatically check for updates when on startup?
+	IfMsgBox,Yes
+		updatereply = 1
+	else
+		updatereply = 0
+}
+update := GetValFromIni("Preferences","UpdateCheck",updatereply)
+IniWrite,0.3,texter.ini,Preferences,Version
+if (update = 1)
+	SetTimer,RunUpdateCheck,10000
+return
+
+RunUpdateCheck:
 update("texter")
 return
 
-update(program)
-{
-	SetTimer, UpdateCheck, Off
+update(program) {
+	SetTimer, RunUpdateCheck, Off
 	UrlDownloadToFile,http://svn.adampash.com/%program%/CurrentVersion.txt,%A_WorkingDir%\VersionCheck.txt
 	if ErrorLevel = 0
 	{
 		FileReadLine, Latest, %A_WorkingDir%\VersionCheck.txt,1
 		IniRead,Current,%program%.ini,Preferences,Version
-		if (Latest != Current)
+		;MsgBox,Latest: %Latest% `n Current: %Current%
+		if (Latest > Current)
 		{
-			MsgBox,4,A new version of Texter is available!,Would you like to visit the Texter homepage and download the latest version?
+			MsgBox,4,A new version of %program% is available!,Would you like to visit the %program% homepage and download the latest version?
 			IfMsgBox,Yes
-				Goto,TexterHomepage
+				Goto,Homepage
 		}
 		FileDelete,%A_WorkingDir%\VersionCheck.txt ;; delete version check
 	}
 }
-return
 
+return
 EXIT: 
 ExitApp 
