@@ -85,7 +85,11 @@ else
 return
 
 EXECUTE:
-SendMode Play
+;; below added b/c SendMode Play appears not to be supported in Vista
+if (A_OSVersion = "WIN_VISTA")
+	SendMode Input
+else
+	SendMode Play
 ; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
 SoundPlay, %A_ScriptDir%\resources\replace.wav
 ReturnTo := 0
