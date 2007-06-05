@@ -443,9 +443,9 @@ Menu,TRAY,Add,P&references...,PREFERENCES
 Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
-Menu,TRAY,Add,&Disable,DISABLE
-if disable = 1
-	Menu,Tray,Check,&Disable
+;Menu,TRAY,Add,&Disable,DISABLE
+;if disable = 1
+;	Menu,Tray,Check,&Disable
 Menu,TRAY,Add,E&xit,EXIT
 Menu,TRAY,Default,&Manage hotstrings
 Menu,Tray,Tip,Texter

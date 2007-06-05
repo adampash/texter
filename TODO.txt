@@ -11,7 +11,7 @@ Next time:
 Features/fixes for 0.3 release:
 x Automatically check for updates
 x Printable list of hotstrings
-X Disable Texter through the system tray
+- Disable Texter through the system tray (deprecated through dev b/c of SendPlay solution)
 x Fix blank hotstring bug (http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1077311)
 x Changed replacment method so that it's more compatible with games/apps
 x New icon
