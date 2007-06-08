@@ -10,6 +10,7 @@
 SetWorkingDir %A_ScriptDir%
 #SingleInstance,Force 
 #NoEnv
+StringCaseSense On
 AutoTrim,off
 SetKeyDelay,-1
 SetWinDelay,0 
@@ -86,12 +87,13 @@ return
 
 EXECUTE:
 ;; below added b/c SendMode Play appears not to be supported in Vista
-if (A_OSVersion = "WIN_VISTA")
+;mode2 = Synergy
+if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
 	SendMode Input
 else
-	SendMode Play
-; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
-SoundPlay, %A_ScriptDir%\resources\replace.wav
+	SendMode Play   ; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
+if (ExSound = 1)
+	SoundPlay, %A_ScriptDir%\resources\replace.wav
 ReturnTo := 0
 StringLen,BSlength,input
 Send, {BS %BSlength%}
@@ -103,7 +105,25 @@ IfInString,ReplacementText,::scr::
 	;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
 	StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
 	StringReplace,Script,ReplacementText,::scr::,,
-	SendEvent,%Script%
+	IfInString,Script,`%s
+	{
+		StringReplace, Script, Script,`%s, ¢, All
+		Loop,Parse,Script,¢
+		{
+			if (A_Index != 1)
+			{
+				StringGetPos,len,A_LoopField,%A_Space%
+				StringTrimRight,sleepTime,A_LoopField,%len%
+				StringMid,thisScript,A_LoopField,(len + 2),
+				Sleep,%sleepTime%
+				SendInput,%thisScript%
+			}
+			else
+				SendInput,%A_LoopField%
+		}
+	}
+	else
+		SendInput,%Script%
 	return
 }
 else
@@ -214,6 +234,8 @@ MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
+ExSound := GetValFromIni("Preferences","ExSound",1)
+Synergy := GetValFromIni("Preferences","Synergy",0)
 
 ;; Enable hotkeys for creating new keys and managing replacements
 if otfhotkey <>
@@ -558,8 +580,8 @@ if otfhotkey<>
 if managehotkey<>
 	HotKey,%managehotkey%,Off
 Gui,3: Destroy
-Gui,3: Add, Tab,x5 y5 w300 h190,General|Print|Stats ;|Import|Export Add these later
-Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
+Gui,3: Add, Tab,x5 y5 w306 h230,General|Print|Stats ;|Import|Export Add these later
+Gui,3: Add,Button,x150 y240 w75 GSETTINGSOK Default,&OK
 Gui,3: Add,Text,x10 y40,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
 Gui,3: Add,Text,x150 y40,Hotstring Management shortcut:
@@ -572,8 +594,12 @@ IniRead,OnStartup,texter.ini,Settings,Startup
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
 IniRead,Update,texter.ini,Preferences,UpdateCheck
 Gui,3: Add,Checkbox, vUpdate x20 yp+20 Checked%Update%,Check for updates at launch?
+IniRead,ExSound,texter.ini,Preferences,ExSound
+Gui,3: Add,Checkbox, vExSound x20 yp+20 gToggle Checked%ExSound%,Play sound when replacement triggered?
+IniRead,Synergy,texter.ini,Preferences,Synergy
+Gui,3: Add,Checkbox, vSynergy x20 yp+20 gToggle Checked%Synergy%,Make Texter compatible across computers with Synergy?
 ;Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
-Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
+Gui,3: Add,Button,x230 y240 w75 GSETTINGSCANCEL,&Cancel
 Gui,3: Tab,2
 Gui,3: Add,Button,w150 h150 gPrintableList,Create Printable Texter Cheatsheet
 Gui,3: Add,Text,xp+160 y50 w125 Wrap,Click the big button to export a printable cheatsheet of all your Texter hotstrings, replacements, and triggers.
@@ -666,27 +692,32 @@ if managehotkey <>
 	HotKey,%managehotkey%,On
 Return
 
+TOGGLE:
+GuiControlGet,ToggleValue,,%A_GuiControl%
+IniWrite,%ToggleValue%,texter.ini,Preferences,%A_GuiControl%
+return
+
 MANAGE:
 GoSub,GetFileList
 StringReplace, FileList, FileList, .txt,,All
 Gui,2: Destroy
-Gui,2: font, s12, Arial  
-Gui,2: Add, Text,x15 y20, Hotstring:
-Gui,2: Add, ListBox, x13 y40 r15 W100 vChoice gShowString Sort,%FileList%
-Gui,2: Add,DropDownList,x+20 y15 vTextOrScript, Text||Script
-Gui,2: Add, Edit, xp y45 r12 W460 vFullText,
-Gui,2: Add, Text,y282 x150,Trigger:
-Gui,2: Add, Checkbox, vEnterCbox yp xp+60, Enter
+Gui,2: Default
+Gui,2: Font, s12, Arial
+Gui,2: Add, Text, Section, Hotstring:
+Gui,2: Add, ListBox, xs r15 W100 vChoice gShowString Sort, %FileList%
+Gui,2: Add, Button, w35 xs+10 GAdd,+
+Gui,2: Add, Button, w35 xp+40 GDelete,-
+Gui,2: Add, DropDownList, Section ys vTextOrScript, Text||Script
+Gui,2: Add, Edit, r12 W460 vFullText
+Gui,2: Add, Text, xs,Trigger:
+Gui,2: Add, Checkbox, vEnterCbox yp xp+65, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
-Gui,2: font, s8, Arial
-Gui,2: Add,Button,w80 GPButtonSave yp x500,&Save
-Gui,2: Add, Button,w80 default GPButtonOK x420 yp+80,&OK
-Gui,2: Add, Button,w80 xp+90 GPButtonCancel,&Cancel
-Gui,2: font, s12, Arial 
-Gui,2: Add, Button, w35 x20 y320 GAdd,+
-Gui,2: Add, Button, w35 x60 y320 GDelete,-
-Gui,2: Show, W600 h400, Texter Management
+Gui,2: Font, s8, Arial
+Gui,2: Add,Button, w80 GPButtonSave xs+375 yp, &Save
+Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+50,&OK
+Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
+Gui,2: Show, , Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,Esc,PButtonCancel,On
 Hotkey,!p,Preferences
@@ -813,7 +844,7 @@ GuiControlGet,EnterCbox,,EnterCbox
 GuiControlGet,TabCbox,,TabCbox
 GuiControlGet,SpaceCbox,,SpaceCbox
 Gosub,SAVE
-;;
+
 return
 
 PButtonCancel:
@@ -823,20 +854,22 @@ return
 PButtonOK:
 Gui, Submit
 GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,SaveText,,FullText
-GuiControlGet,ToS,,TextOrScript
-FileDelete, replacements\%ActiveChoice%.txt
-if ToS = Text
-	FileAppend,%SaveText%,replacements\%ActiveChoice%.txt
-else
-	FileAppend,::scr::%SaveText%,replacements\%ActiveChoice%.txt
+if ActiveChoice <>	
+{
+	GuiControlGet,SaveText,,FullText
+	GuiControlGet,ToS,,TextOrScript
+	FileDelete, replacements\%ActiveChoice%.txt
+	if ToS = Text
+		FileAppend,%SaveText%,replacements\%ActiveChoice%.txt
+	else
+		FileAppend,::scr::%SaveText%,replacements\%ActiveChoice%.txt
 
-GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,EnterCbox,,EnterCbox
-GuiControlGet,TabCbox,,TabCbox
-GuiControlGet,SpaceCbox,,SpaceCbox
-Gosub,SAVE
-
+	GuiControlGet,ActiveChoice,,Choice
+	GuiControlGet,EnterCbox,,EnterCbox
+	GuiControlGet,TabCbox,,TabCbox
+	GuiControlGet,SpaceCbox,,SpaceCbox
+	Gosub,SAVE
+}
 return
 
 SAVE:

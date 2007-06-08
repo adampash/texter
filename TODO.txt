@@ -8,6 +8,19 @@ Next time:
 - For bundles, create an active directory that updates what's enabled at any time
 - Move old replacements to their own directory
 
+Features/fixes for 0.4 release:
+x Made them case sensitive
+- Custom triggers?
+- Fix gui weirdness for some ppl?
+- Export/Import via .ini files?
+x Work out SendPlay and SendInput discrepencies (maybe make it available in Prefs so that it can work in Synergy)
+		- SendPlay is better if you're using just one computer/not using Synergy (for example, it buffers text so you can type
+			while the replacement is working and it's sent when the Send is complete
+		- If you are using Synergy, SendInput/SendEvent need to be used.
+x Make replacement sound optional
+x Implement delay variable for script mode
+- Disable Texter through system tray menu
+
 Features/fixes for 0.3 release:
 x Automatically check for updates
 x Printable list of hotstrings
