@@ -86,8 +86,9 @@ else
 return
 
 EXECUTE:
-;; below added b/c SendMode Play appears not to be supported in Vista
-;mode2 = Synergy
+; this variable ensures that the active Window is receiving the text, activated before send
+WinGetActiveTitle,thisWindow
+;; below added b/c SendMode Play appears not to be supported in Vista 
 if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
 	SendMode Input
 else
@@ -104,26 +105,36 @@ IfInString,ReplacementText,::scr::
 {
 	;To fix double spacing issue, replace `r`n (return + new line) as AHK sends a new line for each character
 	StringReplace,ReplacementText,ReplacementText,`r`n,`n, All
-	StringReplace,Script,ReplacementText,::scr::,,
-	IfInString,Script,`%s
+	StringReplace,ReplacementText,ReplacementText,::scr::,,
+	IfInString,ReplacementText,`%p
 	{
-		StringReplace, Script, Script,`%s, ¢, All
-		Loop,Parse,Script,¢
+		textPrompt(ReplacementText)
+	}
+	IfInString,ReplacementText,`%s
+	{
+		StringReplace, ReplacementText, ReplacementText,`%s(, ¢, All
+		Loop,Parse,ReplacementText,¢
 		{
 			if (A_Index != 1)
 			{
-				StringGetPos,len,A_LoopField,%A_Space%
+				StringGetPos,len,A_LoopField,)
 				StringTrimRight,sleepTime,A_LoopField,%len%
 				StringMid,thisScript,A_LoopField,(len + 2),
 				Sleep,%sleepTime%
+				;WinActivate,%thisWindow%  The assumption must be made that in script mode
+				; the user can intend to enter text in other windows
 				SendInput,%thisScript%
 			}
 			else
+			{
+				;WinActivate,%thisWindow%  The assumption must be made that in script mode
+				; the user can intend to enter text in other windows
 				SendInput,%A_LoopField%
+			}
 		}
 	}
 	else
-		SendInput,%Script%
+		SendInput,%ReplacementText%
 	return
 }
 else
@@ -153,6 +164,10 @@ else
 		FormatTime, LDate, , LongDate
 		StringReplace, ReplacementText, ReplacementText, `%dl, %LDate%, All
 	}
+	IfInString,ReplacementText,`%p
+	{
+		textPrompt(ReplacementText)
+	}
 	IfInString,ReplacementText,`%|
 	{
 		;in clipboard mode, CursorPoint & ClipLength need to be calculated after replacing `r`n
@@ -177,23 +192,36 @@ else
 		{
 			if ReplacementText contains !,#,^,+
 			{
+				WinActivate,%thisWindow%
 				SendRaw, %ReplacementText%
 				Send,{Left %ReturnTo%}
 			}
 			else
+			{
+				WinActivate,%thisWindow%
 				Send,%ReplacementText%{Left %ReturnTo%}
+			}
 		}
 		else
+		{
+			WinActivate,%thisWindow%
 			SendRaw,%ReplacementText%
+		}
 	}
 	else
 	{
 		oldClip = %Clipboard%
 		Clipboard = %ReplacementText%
 		if ReturnTo > 0
+		{
+			WinActivate,%thisWindow%
 			Send,^v{Left %ReturnTo%}
+		}
 		else
+		{
+			WinActivate,%thisWindow%
 			Send,^v
+		}
 		Clipboard = %oldClip%
 	}
 ;	if ReturnTo > 0
@@ -249,11 +277,18 @@ Loop,Parse,keys,`,
 { 
   StringTrimLeft,key,A_LoopField,1 
   StringTrimRight,key,key,1 
-  StringLen,length,key 
+  StringLen,length,key
+  ;; Set ifwinnotactive, if possible
   If length=0 
-    Hotkey,$`,,HOTKEYS 
+  {
+	Hotkey,IfWinNotActive,Enter desired text
+	Hotkey,$`,,HOTKEYS 
+  }
   Else 
+  {
+	Hotkey,IfWinNotActive,Enter desired text
     Hotkey,$%key%,HOTKEYS 
+  }
 }
 
 ;; This section is intended to exit the input in the Start thread whenever the mouse is clicked or 
@@ -1020,6 +1055,24 @@ update(program) {
 		FileDelete,VersionCheck.txt ;; delete version check
 	}
 }
+
+textPrompt(thisText) {
+	Gui,7: Add,Text,x5 y5, Enter the text you want to include:
+	Gui,7: Add,Edit,x20 y25 r1 vpromptText
+	Gui,7: Add,Text,x5 y50,Your text will be added to this text:
+	Gui,7: Add,Text,x20 y70,%thisText%
+	Gui,7: Show,auto,Enter desired text
+	Hotkey,IfWinActive,Enter desired text
+	Hotkey,Enter,SubmitPrompt
+	;Hotkey,Space,
+	WinWaitClose,Enter desired text
+}
+
+SubmitPrompt:
+Gui, 7: Submit
+Gui, 7: Destroy
+StringReplace,ReplacementText,ReplacementText,`%p,%promptText%
+return
 
 return
 EXIT: 

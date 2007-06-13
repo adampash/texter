@@ -1,6 +1,5 @@
 Next time:
 - Determine whether newkey thread called from GUI or hotkey (GuiControlGet,blah - if blah, then...?)
-- Prompts?
 - Import/Export bundles
 - Create bundled interface in Texter management - lets you enable/disable a bundle, add or remove to any bundle, etc.
 - Update everything so it's consistent with new bundled structure
@@ -8,8 +7,9 @@ Next time:
 - For bundles, create an active directory that updates what's enabled at any time
 - Move old replacements to their own directory
 
-Features/fixes for 0.4 release:
+Features/fixes for 0.4 release:s
 x Made them case sensitive
+x Prompts?
 - Custom triggers?
 - Fix gui weirdness for some ppl?
 - Export/Import via .ini files?
