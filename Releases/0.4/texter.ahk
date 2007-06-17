@@ -191,7 +191,7 @@ else
 	{
 		if ReturnTo > 0
 		{
-			if ReplacementText contains !,#,^,+
+			if ReplacementText contains !,#,^,+,{
 			{
 				WinActivate,%thisWindow%
 				SendRaw, %ReplacementText%
