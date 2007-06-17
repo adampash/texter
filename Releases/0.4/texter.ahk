@@ -258,7 +258,7 @@ ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to 
 IniWrite,{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Up}`,{Down},texter.ini,Autocomplete,Keys
 keys := GetValFromIni("Autocomplete","Keys","{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Esc}`,{Up}`,{Down}")
 otfhotkey := GetValFromIni("Hotkey","OntheFly","^+H")
-managehotkey := GetValFromIni("Hotkey","Management","")
+managehotkey := GetValFromIni("Hotkey","Management","^+M")
 MODE := GetValFromIni("Settings","Mode",0)
 EnterBox := GetValFromIni("Triggers","Enter",0)
 TabBox := GetValFromIni("Triggers","Tab",0)
@@ -684,15 +684,29 @@ Gui,3: Submit
 Gui,3: Destroy
 If (sotfhotkey != otfhotkey)
 {
-  Hotkey,IfWinNotActive,Texter Preferences
-  Hotkey,%otfhotkey%,Toggle
-  otfhotkey:=sotfhotkey
-  Hotkey,IfWinNotActive,Texter Preferences
-  Hotkey,%otfhotkey%,Newkey,On
-  IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
-  Hotkey,IfWinActive
+	if sotfhotkey <>
+	{
+		if otfhotkey <>
+		{
+		  Hotkey,IfWinNotActive,Texter Preferences
+		  Hotkey,%otfhotkey%,Toggle
+		  Hotkey,IfWinActive
+		}
+	  otfhotkey:=sotfhotkey
+	  Hotkey,IfWinNotActive,Texter Preferences
+	  Hotkey,%otfhotkey%,Newkey,On
+	  IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
+	  Hotkey,IfWinActive
+	}
+	else
+	{
+		Hotkey,IfWinNotActive,Texter Preferences
+		Hotkey,%otfhotkey%,Toggle
+		Hotkey,IfWinActive
+		otfhotkey:=sotfhotkey
+		IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly	
+	}
 }
-
 If (smanagehotkey != managehotkey)
 {
   Hotkey,IfWinNotActive,Texter Preferences
@@ -779,16 +793,7 @@ Hotkey,IfWinActive
 return
 
 ADD:
-Loop,Parse,keys,`, 
-{ 
-  StringTrimLeft,key,A_LoopField,1 
-  StringTrimRight,key,key,1 
-  StringLen,length,key 
-  If length=0 
-    Hotkey,$`,,Off
-  Else 
-    Hotkey,$%key%,Off
-}
+GoSub,DisableTriggers
 GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
@@ -797,17 +802,8 @@ IfWinExist,Add new hotstring...
 GoSub,GetFileList
 StringReplace, FileList, FileList,|%RString%|,|%RString%||
 GuiControl,,Choice,|%FileList%
+GoSub,DisableTriggers
 GoSub,ShowString
-Loop,Parse,keys,`, 
-{ 
-  StringTrimLeft,key,A_LoopField,1 
-  StringTrimRight,key,key,1
-  StringLen,length,key 
-  If length=0 
-    Hotkey,$`,,On
-  Else 
-    Hotkey,$%key%,On
-}
 return
 
 DELETE:
