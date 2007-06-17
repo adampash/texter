@@ -23,6 +23,7 @@ x Work out SendPlay and SendInput discrepencies (maybe make it available in Pref
 x Make replacement sound optional
 x Implement delay variable for script mode
 x Disable Texter through system tray menu
+x Addressed bracket bug: http://lifehacker.com/software/exclusive-lifehacker-download/texter-version-03-now-available-266205.php#c1636243
 
 Features/fixes for 0.3 release:
 x Automatically check for updates
