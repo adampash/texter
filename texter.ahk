@@ -15,75 +15,43 @@ AutoTrim,off
 SetKeyDelay,-1
 SetWinDelay,0 
 Gosub,UpdateCheck
+Gosub,ASSIGNVARS
 Gosub,READINI
-Gosub,EnableTriggers
+EnableTriggers(true)
 Gosub,RESOURCES
 Gosub,TRAYMENU
 ;Gosub,AUTOCLOSE
 
-FileRead, EnterKeys, bank\enter.csv
-FileRead, TabKeys, bank\tab.csv
-FileRead, SpaceKeys, bank\space.csv
+FileRead, EnterKeys, %EnterCSV%
+FileRead, TabKeys, %TabCSV%
+FileRead, SpaceKeys, %SpaceCSV%
 Gosub,GetFileList
 Goto Start
 
 START:
 hotkey = 
+executed = false
 Input,input,V L99,{SC77}
-if hotkey In %cancel%
+IfInString,FileList,%input%|
+{ ;input matches a hotstring -- see if hotkey matches a trigger for hotstring
+	if hotkey in %ignore%
+	{
+		StringTrimLeft,Bank,hotkey,1
+		StringTrimRight,Bank,Bank,1
+		Bank = %Bank%Keys
+		Bank := %Bank%
+		if input in %Bank%
+		{
+			GoSub, EXECUTE
+			executed = true
+		}
+	}
+}
+if executed = false
 {
 	SendInput,%hotkey%
-	Goto,START
 }
-IfNotInString,FileList,%input%|
-{
-	SendInput,%hotkey%
-	Goto,START
-}
-else if hotkey = `{Space`}
-{
-	if input in %SpaceKeys%
-	{
-		GoSub, Execute
-		Goto,START
-	}
-	else
-	{
-		SendInput,%hotkey%
-		Goto,Start
-	}
-}
-else if hotkey = `{Enter`}
-{
-	if input in %EnterKeys%
-	{
-		GoSub, Execute
-		Goto,START
-	}
-	else
-	{
-		SendInput,%hotkey%
-		Goto,Start
-	}
-}
-else if hotkey = `{Tab`}
-{
-	if input in %TabKeys%
-	{
-		GoSub, Execute
-		GoTo,Start
-	}
-	else
-	{
-		SendInput,%hotkey%
-		Goto,Start
-	}
-}
-else
-{
-	SendInput,%hotkey%
-	Goto,START
-}
+Goto,START
 return
 
 EXECUTE:
@@ -95,11 +63,11 @@ if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in th
 else
 	SendMode Play   ; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
 if (ExSound = 1)
-	SoundPlay, %A_ScriptDir%\resources\replace.wav
+	SoundPlay, %ReplaceWAV%
 ReturnTo := 0
 StringLen,BSlength,input
 Send, {BS %BSlength%}
-FileRead, ReplacementText, replacements\%input%.txt
+FileRead, ReplacementText, %A_ScriptDir%\replacements\%input%.txt
 StringLen,ClipLength,ReplacementText
 
 IfInString,ReplacementText,::scr::
@@ -245,6 +213,16 @@ If hotkeyl>1
 Send,{SC77}
 Return 
 
+ASSIGNVARS:
+EnterCSV = %A_ScriptDir%\bank\enter.csv
+TabCSV = %A_ScriptDir%\bank\tab.csv
+SpaceCSV = %A_ScriptDir%\bank\space.csv
+ReplaceWAV = %A_ScriptDir%\resources\replace.wav
+TexterPNG = %A_ScriptDir%\resources\texter.png
+TexterICO = %A_ScriptDir%\resources\texter.ico
+StyleCSS = %A_ScriptDir%\resources\style.css
+return
+
 READINI: 
 IfNotExist bank
 	FileCreateDir, bank
@@ -321,6 +299,7 @@ $!Tab::
 	if (capsL = "D")
 		SetCapsLockState,On
 }
+
 $!+Tab::
 {
 	GetKeyState,capsL,Capslock,T
@@ -366,72 +345,14 @@ $!+Tab::
 	if (capsL = "D")
 		SetCapsLockState,On
 }
-
 Return
 
-
-;; method written by Dustin Luck for writing to ini
-GetValFromIni(section, key, default)
-{
-	IniRead,IniVal,texter.ini,%section%,%key%
-	if IniVal = ERROR
-	{
-		IniWrite,%default%,texter.ini,%section%,%key%
-		IniVal := default
-	}
-	return IniVal
-}
-
-
-EnableTriggers:
-;; Enable triggers (Enter, Tab, Spacebar)
-Loop,Parse,keys,`, 
-{ 
-  StringTrimLeft,key,A_LoopField,1 
-  StringTrimRight,key,key,1 
-  StringLen,length,key
-  ;; Set ifwinnotactive, if possible
-  If length=0 
-  {
-	Hotkey,IfWinNotActive,Enter desired text
-	Hotkey,$`,,HOTKEYS 
-	Hotkey,IfWinActive
-  }
-  Else 
-  {
-	Hotkey,IfWinNotActive,Enter desired text
-    Hotkey,$%key%,HOTKEYS 
-	Hotkey,IfWinActive
-  }
-}
-return
-
-DisableTriggers:
-Loop,Parse,keys,`,
-{ 
-  StringTrimLeft,key,A_LoopField,1 
-  StringTrimRight,key,key,1 
-  StringLen,length,key 
-  If length=0 
-  {
-    Hotkey,IfWinNotActive,Enter desired text
-	Hotkey,$`,Toggle
-	Hotkey,IfWinActive
-  }
-  Else 
-  {
-    Hotkey,IfWinNotActive,Enter desired text
-	Hotkey,$%key%,Toggle
-	Hotkey,IfWinActive
-  }
-}
-return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 NEWKEY:
 Gui,1: Destroy
 Gui,1: font, s12, Arial  
-Gui,1: +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
+Gui,1: +owner2 +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
 Gui,1: Add, Text,x10 y20, Hotstring:
 Gui,1: Add, Edit, x13 y45 r1 W65 vRString,
 Gui,1: Add, Edit, x100 y45 r4 W395 vFullText, Enter your replacement text here...
@@ -444,83 +365,32 @@ Gui,1: Add, Button,w80 x320 default,&OK
 Gui,1: Add, Button,w80 xp+90 GButtonCancel,&Cancel
 Gui,1: font, s12, Arial  
 Gui,1: Add,DropDownList,x100 y15 vTextOrScript, Text||Script
-Gui,1: Add,Picture,x0 y105,resources\texter.png
+Gui,1: Add,Picture,x0 y105,%TexterPNG%
+Gui 2:+Disabled
 Gui,1: Show, W500 H200,Add new hotstring...
-Hotkey,IfWinActive, Add new hotstring
-Hotkey,Esc,ButtonCancel,On
-Hotkey,IfWinActive
 return
 
+GuiEscape:
 ButtonCancel:
+Gui 2:-Disabled
 Gui,1: Destroy
 return
 
 ButtonOK:
-GuiControlGet,RString,,RString
-IfExist, replacements\%RString%.txt
+Gui,1: Submit, NoHide
+Gui 1:+OwnDialogs
+IfExist, %A_ScriptDir%\replacements\%RString%.txt
 {
 	MsgBox,262144,Hotstring already exists, A replacement with the text %Rstring% already exists.  Would you like to try again?
 	return
 }
-GuiControlGet,EnterCbox,,EnterCbox
-GuiControlGet,TabCbox,,TabCbox
-GuiControlGet,SpaceCbox,,SpaceCbox
-if EnterCbox = 0
-	if TabCbox = 0
-		if SpaceCbox = 0
-		{
-			MsgBox,262144,Choose a trigger,You need to choose a trigger in order to save a hotstring replacement.
-			return
-		}
-Gui, Submit
-If RString<>
+IsScript := (TextOrScript == "Script")
+
+if SaveHotstring(RString, FullText, IsScript, SpaceCbox, TabCbox, EnterCbox)
 {
-	if FullText<>
-	{		
-		if EnterCbox = 1 
-		{
-			IniWrite,1,texter.ini,Triggers,Enter
-			FileAppend,%Rstring%`,, bank\enter.csv
-			FileRead, EnterKeys, bank\enter.csv
-			if TextOrScript = Script
-				FullText = ::scr::%FullText%
-			FileAppend,%FullText%,replacements\%Rstring%.txt
-		}
-		else
-			IniWrite,0,texter.ini,Triggers,Enter
-		if TabCbox = 1
-		{
-			IniWrite,1,texter.ini,Triggers,Tab
-			FileAppend,%Rstring%`,, bank\tab.csv
-			FileRead, TabKeys, bank\tab.csv
-			IfNotExist, replacements\%RString%.txt
-			{
-				if TextOrScript = Script
-					FullText = ::scr::%FullText%
-				FileAppend,%FullText%,replacements\%Rstring%.txt
-			}
-		}
-		else
-			IniWrite,0,texter.ini,Triggers,Tab
-		if SpaceCbox = 1
-		{
-			IniWrite,1,texter.ini,Triggers,Space
-			FileAppend,%Rstring%`,, bank\space.csv
-			FileRead, SpaceKeys, bank\space.csv
-			IfNotExist, replacements\%RString%.txt
-			{
-				if TextOrScript = Script
-					FullText = ::scr::%FullText%
-				FileAppend,%FullText%,replacements\%Rstring%.txt
-			}
-		}
-		else
-			IniWrite,0,texter.ini,Triggers,Space
-	}
+	Gui 2:-Disabled
+	Gui,1: Submit
 }
-IniRead,EnterBox,texter.ini,Triggers,Enter
-IniRead,TabBox,texter.ini,Triggers,Tab
-IniRead,SpaceBox,texter.ini,Triggers,Space
 Gosub,GetFileList
 return
 
@@ -549,7 +419,7 @@ Return
 
 ABOUT:
 Gui,4: Destroy
-Gui,4: Add,Picture,x200 y0,resources\texter.png
+Gui,4: Add,Picture,x200 y0,%TexterPNG%
 Gui,4: font, s36, Courier New
 Gui,4: Add, Text,x10 y35,Texter
 Gui,4: font, s8, Courier New
@@ -560,9 +430,6 @@ Gui,4:Font,underline bold
 Gui,4:Add,Text,cBlue gHomepage Center x110 y230,Texter homepage
 Gui,4: Color,F8FAF0
 Gui,4: Show,auto,About Texter
-Hotkey,IfWinActive, About Texter
-Hotkey,Esc,DismissAbout,On
-Hotkey,IfWinActive
 Return
 
 DISABLE:
@@ -570,13 +437,13 @@ IniRead,disable,texter.ini,Settings,Disable
 if disable = 0
 {
 	IniWrite,1,texter.ini,Settings,Disable
-	Gosub,DisableTriggers
+	EnableTriggers(false)
 	Menu,Tray,Check,&Disable
 }
 else
 {
 	IniWrite,0,texter.ini,Settings,Disable
-	Gosub,DisableTriggers
+	EnableTriggers(true)
 	Menu,Tray,Uncheck,&Disable
 }
 return
@@ -593,13 +460,14 @@ Scripting:
 Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php#advanced
 return
 
+4GuiEscape:
 DismissAbout:
 Gui,4: Destroy
 return
 
 HELP:
 Gui,5: Destroy
-Gui,5: Add,Picture,x200 y5,resources\texter.png
+Gui,5: Add,Picture,x200 y5,%TexterPNG%
 Gui,5: font, s36, Courier New
 Gui,5: Add, Text,x20 y40,Texter
 Gui,5: font, s9, Arial 
@@ -618,18 +486,16 @@ Gui,5:Font,norm
 Gui,5:Add,Text,x50 y200 w280, Texter is capable of sending advanced keystrokes, like keyboard combinations.  This section lists all of the special characters used in script creation, and offers a few examples of how you might use scripts.
 Gui,5: Color,F8FAF0
 Gui,5: Show,auto,Texter Help
-Hotkey,IfWinActive, Texter Help
-Hotkey,Esc,DismissHelp,On
-Hotkey,IfWinActive
 Return
 
+5GuiEscape:
 DismissHelp:
 Gui,5: Destroy
 return
 
 GetFileList:
 FileList =
-Loop, replacements\*.txt
+Loop, %A_ScriptDir%\replacements\*.txt
 {
 	FileList = %FileList%%A_LoopFileName%|
 }
@@ -649,7 +515,7 @@ Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsmanagehotkey, %managehotkey%
 CompatMode := NOT MODE
 Gui,3: Add,Radio,x10 y100 vModeGroup Checked%CompatMode%,Compatibility mode (Default)
 Gui,3: Add,Radio,Checked%MODE%,Clipboard mode (Faster, but less compatible)
-IniRead,OnStartup,texter.ini,Settings,Startup
+OnStartup := GetValFromIni(Settings, Startup, false)
 Gui,3: Add,Checkbox, vStartup x20 yp+30 Checked%OnStartup%,Run Texter at start up
 IniRead,Update,texter.ini,Preferences,UpdateCheck
 Gui,3: Add,Checkbox, vUpdate x20 yp+20 Checked%Update%,Check for updates at launch?
@@ -674,9 +540,6 @@ Gui,3: Add,Text,x25 y100,Hours saved:             %time_saved% (assuming 400 cha
 ;Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
 ;Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
 Gui,3: Show,AutoSize,Texter Preferences
-Hotkey,IfWinActive, Texter Preferences
-Hotkey,Esc,SETTINGSCANCEL,On
-Hotkey,IfWinActive
 Return
 
 SETTINGSOK:
@@ -684,40 +547,29 @@ Gui,3: Submit
 Gui,3: Destroy
 If (sotfhotkey != otfhotkey)
 {
-	if sotfhotkey <>
+	otfhotkey:=sotfhotkey
+	If otfhotkey<>
 	{
-		if otfhotkey <>
-		{
-		  Hotkey,IfWinNotActive,Texter Preferences
-		  Hotkey,%otfhotkey%,Toggle
-		  Hotkey,IfWinActive
-		}
-	  otfhotkey:=sotfhotkey
 	  Hotkey,IfWinNotActive,Texter Preferences
-	  Hotkey,%otfhotkey%,Newkey,On
-	  IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
+	  Hotkey,%otfhotkey%,Newkey
+	  HotKey,%otfhotkey%,On
 	  Hotkey,IfWinActive
 	}
-	else
-	{
-		Hotkey,IfWinNotActive,Texter Preferences
-		Hotkey,%otfhotkey%,Toggle
-		Hotkey,IfWinActive
-		otfhotkey:=sotfhotkey
-		IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly	
-	}
-}
-If (smanagehotkey != managehotkey)
-{
-  Hotkey,IfWinNotActive,Texter Preferences
-  Hotkey,%managehotkey%,Toggle
-  managehotkey:=smanagehotkey
-  Hotkey,IfWinNotActive,Texter Preferences
-  Hotkey,%managehotkey%,Manage,On
-  IniWrite,%managehotkey%,texter.ini,Hotkey,Management
-  Hotkey,IfWinActive
+	IniWrite,%otfhotkey%,texter.ini,Hotkey,OntheFly
 }
 
+If (smanagehotkey != managehotkey)
+{
+	managehotkey:=smanagehotkey
+	If managehotkey<>
+	{
+	  Hotkey,IfWinNotActive,Texter Preferences
+	  Hotkey,%managehotkey%,Manage
+	  HotKey,%managehotkey%,On
+	  Hotkey,IfWinActive
+	}
+	IniWrite,%managehotkey%,texter.ini,Hotkey,Management
+}
 ;code optimization -- calculate MODE from ModeGroup
 MODE := ModeGroup - 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
@@ -732,9 +584,9 @@ If Startup = 1
 			IconLocation=%A_ScriptFullPath%
 		}
 		;2nd from icon in resources folder
-		else IfExist resources\texter.ico
+		else IfExist %TexterICO%
 		{
-			IconLocation=resources\texter.ico
+			IconLocation=%TexterICO%
 		}
 		;3rd from the AutoHotkey application itself
 		else
@@ -743,7 +595,7 @@ If Startup = 1
 		}
 		;use %A_ScriptFullPath% instead of texter.exe
 		;to allow compatibility with source version
-		FileCreateShortcut,%A_ScriptFullPath%,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_WorkingDir%,,Text replacement system tray application,%IconLocation%
+		FileCreateShortcut,%A_ScriptFullPath%,%A_StartMenu%\Programs\Startup\Texter.lnk,%A_ScriptDir%,,Text replacement system tray application,%IconLocation%
 }
 else
 {
@@ -756,6 +608,7 @@ IniWrite,%Startup%,texter.ini,Settings,Startup
 
 Return
 
+3GuiEscape:
 SETTINGSCANCEL:
 Gui,3:Destroy
 Return
@@ -765,9 +618,9 @@ GuiControlGet,ToggleValue,,%A_GuiControl%
 IniWrite,%ToggleValue%,texter.ini,Preferences,%A_GuiControl%
 return
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for management ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 MANAGE:
 GoSub,GetFileList
-StringReplace, FileList, FileList, .txt,,All
 Gui,2: Destroy
 Gui,2: Default
 Gui,2: Font, s12, Arial
@@ -787,13 +640,12 @@ Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+50,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
 Gui,2: Show, , Texter Management
 Hotkey,IfWinActive, Texter Management
-Hotkey,Esc,PButtonCancel,On
 Hotkey,!p,Preferences
 Hotkey,IfWinActive
 return
 
 ADD:
-GoSub,DisableTriggers
+EnableTriggers(false)
 GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
@@ -802,46 +654,24 @@ IfWinExist,Add new hotstring...
 GoSub,GetFileList
 StringReplace, FileList, FileList,|%RString%|,|%RString%||
 GuiControl,,Choice,|%FileList%
-GoSub,DisableTriggers
+EnableTriggers(false)
 GoSub,ShowString
 return
 
 DELETE:
+Gui 2:+OwnDialogs
 GuiControlGet,ActiveChoice,,Choice
 MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
-	FileDelete,replacements\%ActiveChoice%.txt
-	if ActiveChoice in %EnterKeys%
-	{
-		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\enter.csv
-		FileAppend,%EnterKeys%, bank\enter.csv
-		FileRead, EnterKeys, bank\enter.csv
-	}
-	if ActiveChoice in %TabKeys%
-	{
-		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\tab.csv
-		FileAppend,%TabKeys%, bank\tab.csv
-		FileRead, TabKeys, bank\tab.csv
-	}
-	if ActiveChoice in %SpaceKeys%
-	{
-		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\space.csv
-		FileAppend,%SpaceKeys%, bank\space.csv
-		FileRead, SpaceKeys, bank\space.csv
-	}
+	FileDelete,%A_ScriptDir%\replacements\%ActiveChoice%.txt
+	DelFromBank(ActiveChoice, EnterKeys, EnterCSV)
+	DelFromBank(ActiveChoice, TabKeys, TabCSV)
+	DelFromBank(ActiveChoice, SpaceKeys, SpaceCSV)
 	GoSub,GetFileList
 	GuiControl,,Choice,|%FileList%
-	GuiControl,,FullText,
-	GuiControl,,EnterCbox,0
-	GuiControl,,TabCbox,0
-	GuiControl,,SpaceCbox,0
+	GoSub,ShowString
 }
-else
-	return
 return
 
 ShowString:
@@ -865,7 +695,7 @@ if ActiveChoice in %SpaceKeys%
 else
 	GuiControl,,SpaceCbox,0
 
-FileRead, Text, replacements\%ActiveChoice%.txt
+FileRead, Text, %A_ScriptDir%\replacements\%ActiveChoice%.txt
 IfInString,Text,::scr::
 {
 	GuiControl,,TextOrScript,|Text|Script||
@@ -877,126 +707,146 @@ GuiControl,,FullText,%Text%
 return
 
 PButtonSave:
-GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,SaveText,,FullText
-GuiControlGet,ToS,,TextOrScript
-FileDelete, replacements\%ActiveChoice%.txt
-if ToS = Text
+Gui,2: Submit, NoHide
+IsScript := (TextOrScript == "Script")
+If Choice <>
 {
-	FileAppend,%SaveText%,replacements\%ActiveChoice%.txt
+	PSaveSuccessful := SaveHotstring(Choice, FullText, IsScript, SpaceCbox, TabCbox, EnterCbox)
 }
 else
 {
-	FileAppend,::scr::%SaveText%,replacements\%ActiveChoice%.txt
+	PSaveSuccessful = true
 }
-GuiControlGet,ActiveChoice,,Choice
-GuiControlGet,EnterCbox,,EnterCbox
-GuiControlGet,TabCbox,,TabCbox
-GuiControlGet,SpaceCbox,,SpaceCbox
-Gosub,SAVE
-
 return
 
+2GuiEscape:
 PButtonCancel:
 Gui,2: Destroy
 return
 
 PButtonOK:
-Gui, Submit
-GuiControlGet,ActiveChoice,,Choice
-if ActiveChoice <>	
-{
-	GuiControlGet,SaveText,,FullText
-	GuiControlGet,ToS,,TextOrScript
-	FileDelete, replacements\%ActiveChoice%.txt
-	if ToS = Text
-		FileAppend,%SaveText%,replacements\%ActiveChoice%.txt
-	else
-		FileAppend,::scr::%SaveText%,replacements\%ActiveChoice%.txt
-
-	GuiControlGet,ActiveChoice,,Choice
-	GuiControlGet,EnterCbox,,EnterCbox
-	GuiControlGet,TabCbox,,TabCbox
-	GuiControlGet,SpaceCbox,,SpaceCbox
-	Gosub,SAVE
-}
+Gosub,PButtonSave
+if PSaveSuccessful
+	Gui,2: Submit
 return
 
-SAVE:
-if EnterCbox = 1
+;; method written by Dustin Luck for writing to ini
+GetValFromIni(section, key, default)
 {
-	if ActiveChoice in %EnterKeys%
+	IniRead,IniVal,texter.ini,%section%,%key%
+	if IniVal = ERROR
 	{
+		IniWrite,%default%,texter.ini,%section%,%key%
+		IniVal := default
 	}
-	else
-	{
-		FileAppend,%ActiveChoice%`,, bank\enter.csv
-		FileRead, EnterKeys, bank\enter.csv
-	}
+	return IniVal
 }
-else
-{
-	if ActiveChoice in %EnterKeys%
-	{
-		StringReplace, EnterKeys, EnterKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\enter.csv
-		FileAppend,%EnterKeys%, bank\enter.csv
-		FileRead, EnterKeys, bank\enter.csv
-	}
-}
-if TabCbox = 1
-{
-	if ActiveChoice in %TabKeys%
-	{
-	}
-	else
-	{
-		FileAppend,%ActiveChoice%`,, bank\tab.csv
-		FileRead, TabKeys, bank\tab.csv
-	}
-}
-else
-{
-	if ActiveChoice in %TabKeys%
-	{
-		StringReplace, TabKeys, TabKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\tab.csv
-		FileAppend,%TabKeys%, bank\tab.csv
-		FileRead, TabKeys, bank\tab.csv
-	}
 
-}
-if SpaceCbox = 1
+SaveHotstring(HotString, Replacement, IsScript, SpaceIsTrigger, TabIsTrigger, EnterIsTrigger)
 {
-	if ActiveChoice in %SpaceKeys%
+global EnterCSV
+global TabCSV
+global SpaceCSV
+global EnterKeys
+global TabKeys
+global SpaceKeys
+	successful := false
+	if (!EnterIsTrigger AND !TabIsTrigger AND !SpaceIsTrigger)
 	{
+		MsgBox,262144,Choose a trigger,You need to choose a trigger in order to save a hotstring replacement.
 	}
-	else
+	else if (HotString <> "" AND Replacement <> "")
 	{
-		FileAppend,%ActiveChoice%`,, bank\space.csv
-		FileRead, SpaceKeys, bank\space.csv
-	}
-}
-else
-{
-	if ActiveChoice in %SpaceKeys%
-	{
-		StringReplace, SpaceKeys, SpaceKeys, %ActiveChoice%`,,,All
-		FileDelete, bank\space.csv
-		FileAppend,%SpaceKeys%, bank\space.csv
-		FileRead, SpaceKeys, bank\space.csv
-	}
+		successful := true
+		if IsScript
+		{
+			Replacement = ::scr::%Replacement%
+		}
 
+		IniWrite,%SpaceIsTrigger%,texter.ini,Triggers,Space
+		IniWrite,%TabIsTrigger%,texter.ini,Triggers,Tab
+		IniWrite,%EnterIsTrigger%,texter.ini,Triggers,Enter
+
+		FileDelete, %A_ScriptDir%\replacements\%HotString%.txt
+		FileAppend,%Replacement%,%A_ScriptDir%\replacements\%HotString%.txt
+
+		if EnterIsTrigger
+		{
+			AddToBank(HotString, EnterKeys, EnterCSV)
+		}
+		else
+		{
+			DelFromBank(HotString, EnterKeys, EnterCSV)
+		}
+		if TabIsTrigger
+		{
+			AddToBank(HotString, TabKeys, TabCSV)
+		}
+		else
+		{
+			DelFromBank(HotString, TabKeys, TabCSV)
+		}
+		if SpaceIsTrigger
+		{
+			AddToBank(HotString, SpaceKeys, SpaceCSV)
+		}
+		else
+		{
+			DelFromBank(HotString, SpaceKeys, SpaceCSV)
+		}
+	}
+	GoSub,GetFileList
+	return successful
 }
-return
+
+AddToBank(HotString, ByRef Bank, BankFile)
+{
+	if HotString not in %Bank%
+	{
+		FileAppend,%HotString%`,, %BankFile%
+		FileRead, Bank, %BankFile%
+	}
+}
+
+DelFromBank(HotString, ByRef Bank, BankFile)
+{
+	if HotString in %Bank%
+	{
+		StringReplace, Bank, Bank, %HotString%`,,,All
+		FileDelete, %BankFile%
+		FileAppend,%Bank%, %BankFile%
+	}
+}
+
+EnableTriggers(doEnable)
+{
+global keys
+	StringReplace,tempKeys,keys,`}`,`{,`n,All
+	Loop,Parse,TempKeys,`n,`{`} 
+	{
+		if (doEnable)
+		{
+			Hotkey,IfWinNotActive,Enter desired text
+			Hotkey,$%A_LoopField%,HOTKEYS
+			Hotkey,$%A_LoopField%,On
+			Hotkey,IfWinActive
+		}
+		else
+		{
+			Hotkey,IfWinNotActive,Enter desired text
+			Hotkey,$%A_LoopField%,Off
+			Hotkey,IfWinActive
+		}
+	}
+}
 
 RESOURCES:
 ;code optimization -- removed IfNotExist tests
 ;redundant when final arg to FileInstall is 0
-FileInstall,resources\texter.ico,%A_ScriptDir%\resources\texter.ico,1
-FileInstall,resources\replace.wav,%A_ScriptDir%\resources\replace.wav,0
-FileInstall,resources\texter.png,%A_ScriptDir%\resources\texter.png,1
-FileInstall,resources\style.css,%A_ScriptDir%\resources\style.css,0
+FileInstall,resources\texter.ico,%TexterICO%,1
+FileInstall,resources\replace.wav,%ReplaceWAV%,0
+FileInstall,resources\texter.png,%TexterPNG%,1
+FileInstall,resources\style.css,%StyleCSS%,0
 return
 
 ;AUTOCLOSE:
@@ -1032,7 +882,6 @@ IfExist resources\Texter Replacement Guide.html
 FileAppend,%List%, resources\Texter Replacement Guide.html
 Run,resources\Texter Replacement Guide.html
 return
-
 
 UpdateCheck: ;;;;;;; Update the version number on each new release ;;;;;;;;;;;;;
 IfNotExist texter.ini 
