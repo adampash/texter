@@ -20,6 +20,7 @@ Gosub,READINI
 EnableTriggers(true)
 Gosub,RESOURCES
 Gosub,TRAYMENU
+Gosub,BuildActive
 ;Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %EnterCSV%
@@ -32,7 +33,7 @@ START:
 hotkey = 
 executed = false
 Input,input,V L99,{SC77}
-IfInString,FileList,%input%|
+IfInString,ActiveList,%input%|
 { ;input matches a hotstring -- see if hotkey matches a trigger for hotstring
 	if hotkey in %ignore%
 	{
@@ -67,7 +68,7 @@ if (ExSound = 1)
 ReturnTo := 0
 StringLen,BSlength,input
 Send, {BS %BSlength%}
-FileRead, ReplacementText, %A_ScriptDir%\replacements\%input%.txt
+FileRead, ReplacementText, %A_ScriptDir%\Active\replacements\%input%.txt
 StringLen,ClipLength,ReplacementText
 
 IfInString,ReplacementText,::scr::
@@ -214,9 +215,9 @@ Send,{SC77}
 Return 
 
 ASSIGNVARS:
-EnterCSV = %A_ScriptDir%\bank\enter.csv
-TabCSV = %A_ScriptDir%\bank\tab.csv
-SpaceCSV = %A_ScriptDir%\bank\space.csv
+EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
+TabCSV = %A_ScriptDir%\Active\bank\tab.csv
+SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
 ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
@@ -230,6 +231,8 @@ IfNotExist replacements
 	FileCreateDir, replacements
 IfNotExist resources
 	FileCreateDir, resources
+IfNotExist bundles
+	FileCreateDir, bundles
 IniWrite,0.4,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
@@ -350,7 +353,18 @@ Return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 NEWKEY:
+if A_GuiControl = + ;;;; MAYBE CHAGNGE THIS TO IfWinExist,Texter Management
+	GuiControlGet,CurrentBundle,,BundleTabs
+else
+	CurrentBundle =
+if (CurrentBundle != "") and (CurrentBundle != "Default")
+	AddToDir = Bundles\%CurrentBundle%\
+else
+	AddToDir = 
 Gui,1: Destroy
+IniRead,EnterBox,texter.ini,Triggers,Enter
+IniRead,TabBox,texter.ini,Triggers,Tab
+IniRead,SpaceBox,texter.ini,Triggers,Space
 Gui,1: font, s12, Arial  
 Gui,1: +owner2 +AlwaysOnTop -SysMenu +ToolWindow  ;suppresses taskbar button, always on top, removes minimize/close
 Gui,1: Add, Text,x10 y20, Hotstring:
@@ -379,14 +393,14 @@ return
 ButtonOK:
 Gui,1: Submit, NoHide
 Gui 1:+OwnDialogs
-IfExist, %A_ScriptDir%\replacements\%RString%.txt
+IfExist, %A_ScriptDir%\%AddToDir%replacements\%RString%.txt
 {
 	MsgBox,262144,Hotstring already exists, A replacement with the text %Rstring% already exists.  Would you like to try again?
 	return
 }
 IsScript := (TextOrScript == "Script")
 
-if SaveHotstring(RString, FullText, IsScript, SpaceCbox, TabCbox, EnterCbox)
+if SaveHotstring(RString, FullText, IsScript, AddToDir, SpaceCbox, TabCbox, EnterCbox)
 {
 	Gui 2:-Disabled
 	Gui,1: Submit
@@ -423,7 +437,7 @@ Gui,4: Add,Picture,x200 y0,%TexterPNG%
 Gui,4: font, s36, Courier New
 Gui,4: Add, Text,x10 y35,Texter
 Gui,4: font, s8, Courier New
-Gui,4: Add, Text,x171 y77,0.3
+Gui,4: Add, Text,x171 y77,0.4
 Gui,4: font, s9, Arial 
 Gui,4: Add,Text,x10 y110 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker under the GNU Public License.`nFor details on how to use Texter, check out the
 Gui,4:Font,underline bold
@@ -621,10 +635,29 @@ return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for management ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 MANAGE:
 GoSub,GetFileList
+StringReplace, FileList, FileList, .txt,,All
+Bundles =
+Loop,bundles\*,2
+{
+	Bundles = %Bundles%|%A_LoopFileName%
+	thisBundle = %A_LoopFileName%
+	Loop,bundles\%A_LoopFileName%\replacements\*.txt
+	{
+		thisBundle = %thisBundle%%A_LoopFileName%|
+	}
+	StringReplace, thisBundle, thisBundle, .txt,,All
+	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
+	%A_LoopFileName% = %thisBundle%
+}
+StringReplace, FileList, FileList, .txt,,All
+StringTrimLeft,Bundles,Bundles,1
 Gui,2: Destroy
 Gui,2: Default
 Gui,2: Font, s12, Arial
-Gui,2: Add, Text, Section, Hotstring:
+Gui,2: Add,Tab,x5 y5 h390 w597 vBundleTabs gListBundle,Default|%Bundles% ;;;;;; START ADDING BUNDLES
+Gui,2: Add, Text, Section,
+Gui,2: Tab ;;; Every control after this point belongs to no individual tab
+Gui,2: Add, Text,ys xs,Hotstring:
 Gui,2: Add, ListBox, xs r15 W100 vChoice gShowString Sort, %FileList%
 Gui,2: Add, Button, w35 xs+10 GAdd,+
 Gui,2: Add, Button, w35 xp+40 GDelete,-
@@ -636,12 +669,112 @@ Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
 Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
 Gui,2: Font, s8, Arial
 Gui,2: Add,Button, w80 GPButtonSave xs+375 yp, &Save
-Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+50,&OK
+IniRead,bundleCheck,texter.ini,Bundles,Default
+Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+400 yp+50,Enabled
+Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+30,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
 Gui,2: Show, , Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,!p,Preferences
+Hotkey,delete,Delete
 Hotkey,IfWinActive
+return
+
+ListBundle:
+if A_GuiControl = BundleTabs
+	GuiControlGet,CurrentBundle,,BundleTabs
+IniRead,bundleCheck,texter.ini,Bundles,%CurrentBundle%
+GuiControl,,Choice,|
+Loop,bundles\*,2
+{
+	Bundles = %Bundles%|%A_LoopFileName%
+	thisBundle = %A_LoopFileName%
+	Loop,bundles\%A_LoopFileName%\replacements\*.txt
+	{
+		thisBundle = %thisBundle%%A_LoopFileName%|
+	}
+	StringReplace, thisBundle, thisBundle, .txt,,All
+	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
+	%A_LoopFileName% = %thisBundle%
+}
+;if A_GuiControl = Tab
+;	GuiControl,,Choice,|
+;else
+;	GuiControl,,Choice,%RString%||
+GuiControl,,FullText,
+GuiControl,,EnterCbox,0
+GuiControl,,TabCbox,0
+GuiControl,,SpaceCbox,0
+GuiControl,,bundleCheck,%bundleCheck%
+if CurrentBundle = Default
+{
+	Gosub,GetFileList
+	CurrentBundle = %FileList%
+	GuiControl,,Choice,%CurrentBundle%
+}
+else
+{
+	StringTrimLeft,CurrentBundle,%CurrentBundle%,0
+	GuiControl,,Choice,%CurrentBundle%
+}
+return
+
+ToggleBundle:
+GuiControlGet,CurrentBundle,,BundleTabs
+GuiControlGet,bundleCheck,,bundleCheck
+IniWrite,%bundleCheck%,texter.ini,Bundles,%CurrentBundle%
+Gosub,BuildActive
+return
+
+BuildActive:
+activeBundles =
+FileDelete,Active\replacements\*
+FileDelete,Active\bank\*
+Loop,bundles\*,2
+{
+	IniRead,activeCheck,texter.ini,Bundles,%A_LoopFileName%
+	if activeCheck = 1
+		activeBundles = %activeBundles%%A_LoopFileName%,
+}
+IniRead,activeCheck,texter.ini,Bundles,Default
+if activeCheck = 1
+	activeBundles = %activeBundles%Default
+Loop,Parse,activeBundles,CSV
+{
+;	MsgBox,%A_LoopField%
+	if A_LoopField = Default
+	{
+		FileCopy,replacements\*.txt,Active\replacements
+		FileRead,tab,bank\tab.csv
+		FileAppend,%tab%,Active\bank\tab.csv
+		FileRead,space,bank\space.csv
+		FileAppend,%space%,Active\bank\space.csv
+		FileRead,enter,bank\enter.csv
+		FileAppend,%enter%,Active\bank\enter.csv
+	}
+	else
+	{
+		FileCopy,Bundles\%A_LoopField%\replacements\*.txt,active\replacements
+		FileRead,tab,Bundles\%A_LoopField%\bank\tab.csv
+		FileAppend,%tab%,active\bank\tab.csv
+		FileRead,space,Bundles\%A_LoopField%\bank\space.csv
+		FileAppend,%space%,active\bank\space.csv
+		FileRead,enter,Bundles\%A_LoopField%\bank\enter.csv
+		FileAppend,%enter%,active\bank\enter.csv
+	}
+;		IfExist active\replacements\wc.txt
+;			MsgBox,%A_LoopFileName% put me here
+}
+FileRead, EnterKeys, %A_WorkingDir%\Active\bank\enter.csv
+FileRead, TabKeys, %A_WorkingDir%\Active\bank\tab.csv
+FileRead, SpaceKeys, %A_WorkingDir%\Active\bank\space.csv
+ActiveList =
+Loop, Active\replacements\*.txt
+{
+	ActiveList = %ActiveList%%A_LoopFileName%|
+}
+StringReplace, ActiveList, ActiveList, .txt,,All
+
 return
 
 ADD:
@@ -651,51 +784,71 @@ IfWinExist,Add new hotstring...
 {
 	WinWaitClose,Add new hotstring...,,
 }
-GoSub,GetFileList
-StringReplace, FileList, FileList,|%RString%|,|%RString%||
-GuiControl,,Choice,|%FileList%
-EnableTriggers(false)
+;GoSub,GetFileList
+GoSub,ListBundle
+StringReplace, CurrentBundle, CurrentBundle,|%RString%|,|%RString%||
+GuiControl,,Choice,|%CurrentBundle%
+EnableTriggers(true)
 GoSub,ShowString
 return
 
 DELETE:
 Gui 2:+OwnDialogs
 GuiControlGet,ActiveChoice,,Choice
+GuiControlGet,CurrentBundle,,BundleTabs
+if (CurrentBundle != "") and (CurrentBundle != "Default")
+	RemoveFromDir = Bundles\%CurrentBundle%\
+else
+	RemoveFromDir = 
+
 MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
-	FileDelete,%A_ScriptDir%\replacements\%ActiveChoice%.txt
-	DelFromBank(ActiveChoice, EnterKeys, EnterCSV)
-	DelFromBank(ActiveChoice, TabKeys, TabCSV)
-	DelFromBank(ActiveChoice, SpaceKeys, SpaceCSV)
-	GoSub,GetFileList
-	GuiControl,,Choice,|%FileList%
-	GoSub,ShowString
+	FileDelete,%A_ScriptDir%\%RemoveFromDir%replacements\%ActiveChoice%.txt
+	DelFromBank(ActiveChoice, RemoveFromDir, "enter")
+	DelFromBank(ActiveChoice, RemoveFromDir, "tab")
+	DelFromBank(ActiveChoice, RemoveFromDir, "space")
+	GoSub,ListBundle
+	Gosub,BuildActive
+	GuiControl,,Choice,|%CurrentBundle%
+	GuiControl,,FullText,
+	GuiControl,,EnterCbox,0
+	GuiControl,,TabCbox,0
+	GuiControl,,SpaceCbox,0
 }
 return
 
 ShowString:
 GuiControlGet,ActiveChoice,,Choice
-if ActiveChoice in %EnterKeys%
+GuiControlGet,CurrentBundle,,BundleTabs
+if CurrentBundle = Default
+	ReadFrom = 
+else
+	ReadFrom = bundles\%CurrentBundle%\
+
+FileRead,enter,%ReadFrom%bank\enter.csv
+FileRead,tab,%ReadFrom%bank\tab.csv
+FileRead,space,%ReadFrom%bank\space.csv
+
+if ActiveChoice in %enter%
 {
 	GuiControl,,EnterCbox,1
 }
 else
 	GuiControl,,EnterCbox,0
-if ActiveChoice in %TabKeys%
+if ActiveChoice in %tab%
 {
 	GuiControl,,TabCbox,1
 }
 else
 	GuiControl,,TabCbox,0
-if ActiveChoice in %SpaceKeys%
+if ActiveChoice in %space%
 {
 	GuiControl,,SpaceCbox,1
 }
 else
 	GuiControl,,SpaceCbox,0
-
-FileRead, Text, %A_ScriptDir%\replacements\%ActiveChoice%.txt
+FileRead, Text, %ReadFrom%replacements\%ActiveChoice%.txt
 IfInString,Text,::scr::
 {
 	GuiControl,,TextOrScript,|Text|Script||
@@ -709,9 +862,14 @@ return
 PButtonSave:
 Gui,2: Submit, NoHide
 IsScript := (TextOrScript == "Script")
+
 If Choice <>
 {
-	PSaveSuccessful := SaveHotstring(Choice, FullText, IsScript, SpaceCbox, TabCbox, EnterCbox)
+	if (CurrentBundle != "") and (CurrentBundle != "Default")
+		SaveToDir = Bundles\%CurrentBundle%\
+	else
+		SaveToDir = 
+	PSaveSuccessful := SaveHotstring(Choice, FullText, IsScript, SaveToDir, SpaceCbox, TabCbox, EnterCbox)
 }
 else
 {
@@ -742,7 +900,7 @@ GetValFromIni(section, key, default)
 	return IniVal
 }
 
-SaveHotstring(HotString, Replacement, IsScript, SpaceIsTrigger, TabIsTrigger, EnterIsTrigger)
+SaveHotstring(HotString, Replacement, IsScript, Bundle, SpaceIsTrigger, TabIsTrigger, EnterIsTrigger)
 {
 global EnterCSV
 global TabCSV
@@ -767,40 +925,42 @@ global SpaceKeys
 		IniWrite,%TabIsTrigger%,texter.ini,Triggers,Tab
 		IniWrite,%EnterIsTrigger%,texter.ini,Triggers,Enter
 
-		FileDelete, %A_ScriptDir%\replacements\%HotString%.txt
-		FileAppend,%Replacement%,%A_ScriptDir%\replacements\%HotString%.txt
+		FileDelete, %A_ScriptDir%\%Bundle%replacements\%HotString%.txt
+		FileAppend,%Replacement%,%A_ScriptDir%\%Bundle%replacements\%HotString%.txt
 
 		if EnterIsTrigger
 		{
-			AddToBank(HotString, EnterKeys, EnterCSV)
+			AddToBank(HotString, Bundle, "enter")
 		}
 		else
 		{
-			DelFromBank(HotString, EnterKeys, EnterCSV)
+			DelFromBank(HotString, Bundle, "enter")
 		}
 		if TabIsTrigger
 		{
-			AddToBank(HotString, TabKeys, TabCSV)
+			AddToBank(HotString, Bundle, "tab")
 		}
 		else
 		{
-			DelFromBank(HotString, TabKeys, TabCSV)
+			DelFromBank(HotString, Bundle, "tab")
 		}
 		if SpaceIsTrigger
 		{
-			AddToBank(HotString, SpaceKeys, SpaceCSV)
+			AddToBank(HotString, Bundle, "space")
 		}
 		else
 		{
-			DelFromBank(HotString, SpaceKeys, SpaceCSV)
+			DelFromBank(HotString, Bundle, "space")
 		}
 	}
-	GoSub,GetFileList
+	GoSub,BuildActive
 	return successful
 }
 
-AddToBank(HotString, ByRef Bank, BankFile)
+AddToBank(HotString, Bundle, Trigger)
 {
+	BankFile = %Bundle%bank\%trigger%.csv
+	FileRead, Bank, %BankFile%
 	if HotString not in %Bank%
 	{
 		FileAppend,%HotString%`,, %BankFile%
@@ -808,8 +968,10 @@ AddToBank(HotString, ByRef Bank, BankFile)
 	}
 }
 
-DelFromBank(HotString, ByRef Bank, BankFile)
+DelFromBank(HotString, Bundle, Trigger)
 {
+	BankFile = %Bundle%bank\%trigger%.csv
+	FileRead, Bank, %BankFile%
 	if HotString in %Bank%
 	{
 		StringReplace, Bank, Bank, %HotString%`,,,All
