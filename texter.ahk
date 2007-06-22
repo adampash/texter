@@ -215,6 +215,7 @@ Send,{SC77}
 Return 
 
 ASSIGNVARS:
+Version = 0.4
 EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
 TabCSV = %A_ScriptDir%\Active\bank\tab.csv
 SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
@@ -239,7 +240,7 @@ IfNotExist Active
 	FileCreateDir, Active\replacements
 	FileCreateDir, Active\bank
 }
-IniWrite,0.4,texter.ini,Preferences,Version
+IniWrite,%Version%,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
 IniWrite,{Escape}`,{Tab}`,{Enter}`,{Space}`,{Left}`,{Right}`,{Up}`,{Down},texter.ini,Autocomplete,Keys
@@ -443,7 +444,7 @@ Gui,4: Add,Picture,x200 y0,%TexterPNG%
 Gui,4: font, s36, Courier New
 Gui,4: Add, Text,x10 y35,Texter
 Gui,4: font, s8, Courier New
-Gui,4: Add, Text,x171 y77,0.4
+Gui,4: Add, Text,x171 y77,%Version%
 Gui,4: font, s9, Arial 
 Gui,4: Add,Text,x10 y110 Center,Texter is a text replacement utility designed to save`nyou countless keystrokes on repetitive text entry by`nreplacing user-defined abbreviations (or hotstrings)`nwith your frequently-used text snippets.`n`nTexter is written by Adam Pash and distributed`nby Lifehacker under the GNU Public License.`nFor details on how to use Texter, check out the
 Gui,4:Font,underline bold
@@ -1061,7 +1062,7 @@ IfNotExist texter.ini
 		updatereply = 0
 }
 update := GetValFromIni("Preferences","UpdateCheck",updatereply)
-IniWrite,0.4,texter.ini,Preferences,Version
+IniWrite,%Version%,texter.ini,Preferences,Version
 if (update = 1)
 	SetTimer,RunUpdateCheck,10000
 return
