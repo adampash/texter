@@ -233,6 +233,12 @@ IfNotExist resources
 	FileCreateDir, resources
 IfNotExist bundles
 	FileCreateDir, bundles
+IfNotExist Active
+{
+	FileCreateDir, Active
+	FileCreateDir, Active\replacements
+	FileCreateDir, Active\bank
+}
 IniWrite,0.4,texter.ini,Preferences,Version
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
 ignore := GetValFromIni("Ignore","Keys","{Tab}`,{Enter}`,{Space}") ;keys not to send after completion 
