@@ -12,6 +12,12 @@ Someday:
 - remove punctuation limitations so users can include puncutation in hotstrings - currently this doesn't work b/c scripts are saved as .txt files, so are limited by Windows naming conventions.  AutoClip had a solution for this (hexify), but not sure I want to get rid of my convention - like being able to identify by text file.
 - Add buttons/dropdown/something in Hotkey creation for insertion of clipboard, cursor, dates, time variables
 - Enable/Disable by application
+- Allow for icons in Bundle tabs
+
+Features/fixes for 0.5 release:
+- Bundles
+TODO:
+- fix Save: thread
 
 Features/fixes for 0.4 release:s
 x Made hotstrings case sensitive
