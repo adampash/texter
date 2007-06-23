@@ -426,6 +426,7 @@ Menu,TRAY,Add,&Manage hotstrings,MANAGE
 Menu,TRAY,Add,&Create new hotstring,NEWKEY
 Menu,TRAY,Add
 Menu,TRAY,Add,P&references...,PREFERENCES
+Menu,TRAY,Add,&Import bundle,IMPORT
 Menu,TRAY,Add,&Help,HELP
 Menu,TRAY,Add
 Menu,TRAY,Add,&About...,ABOUT
@@ -669,7 +670,10 @@ Gui,2: Add, ListBox, xs r15 W100 vChoice gShowString Sort, %FileList%
 Gui,2: Add, Button, w35 xs+10 GAdd,+
 Gui,2: Add, Button, w35 xp+40 GDelete,-
 Gui,2: Add, DropDownList, Section ys vTextOrScript, Text||Script
-Gui,2: Add, Edit, r12 W460 vFullText
+Gui,2: Font, s8, Arial
+Gui,2: Add, Button, w80 ys xp+375 GExport,&Export
+Gui,2: Font, s12, Arial
+Gui,2: Add, Edit, r12 W460 xs vFullText
 Gui,2: Add, Text, xs,Trigger:
 Gui,2: Add, Checkbox, vEnterCbox yp xp+65, Enter
 Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
@@ -893,6 +897,41 @@ PButtonOK:
 Gosub,PButtonSave
 if PSaveSuccessful
 	Gui,2: Submit
+return
+
+;;; Threads for importing and exporting Texter bundles ;;;;
+EXPORT:
+GuiControlGet,CurrentBundle,,BundleTabs
+MsgBox,4,Confirm Bundle Export,Are you sure you want to export the %CurrentBundle% bundle?
+IfMsgBox, Yes
+{
+	IfNotExist %A_WorkingDir%\Texter Export
+		FileCreateDir,%A_WorkingDir%\Texter Exports
+	IniWrite,%CurrentBundle%,Texter Exports\%CurrentBundle%.texter,Info,Name
+	if (CurrentBundle = "Default")
+		BundleDir = 
+	else
+		BundleDir = bundles\%CurrentBundle%\
+	Loop,%BundleDir%replacements\*,0
+	{
+		FileRead,replacement,%A_LoopFileFullPath%
+		IniWrite,%A_LoopFileName%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Hotstring
+		IniWrite,%replacement%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Replacement
+	}
+}
+MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world through Texter's import feature. `n`nWould you like to see the %CurrentBundle% bundle?
+IfMsgBox, Yes
+	Run,Texter Exports\
+return
+
+IMPORT:
+FileSelectFile, ImportBundle,M3,, Import Texter bundle, *.texter
+if ErrorLevel = 0
+{
+	MsgBox,% ImportBundle
+	
+	;IniRead,
+}
 return
 
 ;; method written by Dustin Luck for writing to ini
