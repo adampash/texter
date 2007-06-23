@@ -925,13 +925,46 @@ IfMsgBox, Yes
 return
 
 IMPORT:
-FileSelectFile, ImportBundle,M3,, Import Texter bundle, *.texter
+FileSelectFile, ImportBundle,,, Import Texter bundle, *.texter
 if ErrorLevel = 0
 {
-	MsgBox,% ImportBundle
-	
-	;IniRead,
+	IniRead,BundleName,%ImportBundle%,Info,Name
+	FileCreateDir,bundles\%BundleName%
+	FileCreateDir,bundles\%BundleName%\replacements
+	FileCreateDir,bundles\%BundleName%\bank
+	Loop
+	{
+		IniRead,file,%ImportBundle%,%A_Index%,Hotstring
+		IniRead,replacement,%ImportBundle%,%A_Index%,Replacement
+		StringReplace, hotstring, file, .txt
+		bundleCollection = %hotstring%,%bundleCollection%
+		if file = ERROR
+				break
+		else
+			FileAppend,%replacement%,bundles\%BundleName%\replacements\%file%
+	}
+	Gui, 8: Add, Text, Section x10 y10,What triggers would you like to use with this bundle?
+	Gui,8: Add, Checkbox, vEnterCbox x30, Enter
+	Gui,8: Add, Checkbox, vTabCbox yp xp+65, Tab
+	Gui,8: Add, Checkbox, vSpaceCbox yp xp+60, Space
+	Gui,8: Add,Button, x180 Default w80 GCreateBank,&OK
+	Gui, 8: Show,,Set default triggers
 }
+else
+	Msgbox,Error
+return
+
+CreateBank:
+Gui,8: Submit
+Gui,8: Destroy
+if EnterCbox = 1
+	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\enter.csv
+if TabCbox = 1
+	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\tab.csv
+if SpaceCbox = 1
+	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\space.csv
+IniWrite,1,texter.ini,Bundles,%BundleName%
+Gosub,BuildActive
 return
 
 ;; method written by Dustin Luck for writing to ini
