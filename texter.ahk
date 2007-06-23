@@ -671,7 +671,7 @@ Gui,2: Add, Button, w35 xs+10 GAdd,+
 Gui,2: Add, Button, w35 xp+40 GDelete,-
 Gui,2: Add, DropDownList, Section ys vTextOrScript, Text||Script
 Gui,2: Font, s8, Arial
-Gui,2: Add, Button, w80 ys xp+375 GExport,&Export
+Gui,2: Add, Button, w120 ys xp+335 GManageBundles,&Manage Bundles
 Gui,2: Font, s12, Arial
 Gui,2: Add, Edit, r12 W460 xs vFullText
 Gui,2: Add, Text, xs,Trigger:
@@ -899,7 +899,46 @@ if PSaveSuccessful
 	Gui,2: Submit
 return
 
-;;; Threads for importing and exporting Texter bundles ;;;;
+;;; Threads for managing Texter bundles ;;;;
+ManageBundles:
+Gui,2: Add,Button, yp x10 GExport w80,Export
+Gui,2: Add,Button, yp xp+85 GImport w80,Import
+Gui,2: Add,Button, yp xp+85 GAddBundle w80,Add Bundle
+Gui,2: Add,Button, yp xp+85 GDeleteBundle w100,Remove Bundle
+return
+
+AddBundle:
+InputBox,BundleName,New Bundle,What would you like to call your bundle?,,150,138,,,
+if ErrorLevel
+	return
+else
+{
+	IfExist bundles\%BundleName%
+		MsgBox,,Bundle already in use,%BundleName% bundle already exists.`nChoose another name or delete the current %BundleName% bundle.
+	else
+	{
+		FileCreateDir,bundles\%BundleName%
+		FileCreateDir,bundles\%BundleName%\replacements
+		FileCreateDir,bundles\%BundleName%\bank
+		IniWrite,1,texter.ini,Bundles,%BundleName%
+	}
+}
+return
+
+DeleteBundle:
+GuiControlGet,CurrentBundle,,BundleTabs
+if CurrentBundle = Default
+{
+	MsgBox,You can't remove the Default bundle.
+	return
+}
+MsgBox,4,Confirm bundle delete,Are you sure you want to remove the %CurrentBundle% bundle?
+IfMsgBox, Yes
+{
+	FileRemoveDir,bundles\%CurrentBundle%,1
+}
+return
+
 EXPORT:
 GuiControlGet,CurrentBundle,,BundleTabs
 MsgBox,4,Confirm Bundle Export,Are you sure you want to export the %CurrentBundle% bundle?
@@ -920,10 +959,11 @@ IfMsgBox, Yes
 		IniWrite,%A_LoopFileName%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Hotstring
 		IniWrite,%replacement%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Replacement
 	}
-}
-MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nWould you like to see the %CurrentBundle% bundle?
+	MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nWould you like to see the %CurrentBundle% bundle?
 IfMsgBox, Yes
 	Run,Texter Exports\
+}
+
 return
 
 IMPORT:
