@@ -367,7 +367,7 @@ Return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for on-the-fly creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 NEWKEY:
-if A_GuiControl = + ;;;; MAYBE CHAGNGE THIS TO IfWinExist,Texter Management
+if A_GuiControl = + ;;;; MAYBE CHANGE THIS TO IfWinExist,Texter Management
 	GuiControlGet,CurrentBundle,,BundleTabs
 else
 	CurrentBundle =
@@ -449,6 +449,7 @@ Return
 
 ABOUT:
 Gui,4: Destroy
+Gui,4: +owner2
 Gui,4: Add,Picture,x200 y0,%TexterPNG%
 Gui,4: font, s36, Courier New
 Gui,4: Add, Text,x10 y35,Texter
@@ -459,6 +460,7 @@ Gui,4: Add,Text,x10 y110 Center,Texter is a text replacement utility designed to
 Gui,4:Font,underline bold
 Gui,4:Add,Text,cBlue gHomepage Center x110 y230,Texter homepage
 Gui,4: Color,F8FAF0
+Gui 2:+Disabled
 Gui,4: Show,auto,About Texter
 Return
 
@@ -490,8 +492,10 @@ Scripting:
 Run http://lifehacker.com/software//lifehacker-code-texter-windows-238306.php#advanced
 return
 
+4GuiClose:
 4GuiEscape:
 DismissAbout:
+Gui 2:-Disabled
 Gui,4: Destroy
 return
 
@@ -535,6 +539,7 @@ return
 
 PREFERENCES:
 Gui,3: Destroy
+Gui,3: +owner2
 Gui,3: Add, Tab,x5 y5 w306 h230,General|Print|Stats ;|Import|Export Add these later
 Gui,3: Add,Button,x150 y240 w75 GSETTINGSOK Default,&OK
 IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
@@ -570,12 +575,12 @@ time_saved := chars_saved/24000
 Gui,3: Add,Text,x25 y100,Hours saved:             %time_saved% (assuming 400 chars/minute)
 ;Gui,3: Add,Button,x150 y200 w75 GSETTINGSOK Default,&OK
 ;Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
+Gui 2:+Disabled
 Gui,3: Show,AutoSize,Texter Preferences
 Return
 
 SETTINGSOK:
-Gui,3: Submit
-Gui,3: Destroy
+Gui,3: Submit, NoHide
 If (sotfhotkey != otfhotkey)
 {
 	otfhotkey:=sotfhotkey
@@ -636,12 +641,12 @@ else
 	}
 }
 IniWrite,%Startup%,texter.ini,Settings,Startup
-
-Return
-
+3GuiClose:
 3GuiEscape:
 SETTINGSCANCEL:
-Gui,3:Destroy
+Gui 2:-Disabled
+Gui,3: Destroy
+
 Return
 
 TOGGLE:
@@ -679,8 +684,6 @@ Gui,2: Add, ListBox, xs r15 W100 vChoice gShowString Sort, %FileList%
 Gui,2: Add, Button, w35 xs+10 GAdd,+
 Gui,2: Add, Button, w35 xp+40 GDelete,-
 Gui,2: Add, DropDownList, Section ys vTextOrScript, Text||Script
-Gui,2: Font, s8, Arial
-Gui,2: Add, Button, w120 ys xp+335 GManageBundles,&Manage Bundles
 Gui,2: Font, s12, Arial
 Gui,2: Add, Edit, r12 W460 xs vFullText
 Gui,2: Add, Text, xs,Trigger:
@@ -693,6 +696,19 @@ IniRead,bundleCheck,texter.ini,Bundles,Default
 Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+400 yp+50,Enabled
 Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+30,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
+Menu, ToolsMenu, Add, P&references..., Preferences
+Menu, MgmtMenuBar, Add, &Tools, :ToolsMenu
+Menu, BundlesMenu, Add, &Export, Export
+Menu, BundlesMenu, Add, &Import, Import
+Menu, BundlesMenu, Add, &Add, AddBundle
+Menu, BundlesMenu, Add, &Remove, DeleteBundle
+Menu, MgmtMenuBar, Add, &Bundles, :BundlesMenu
+Menu, HelpMenu, Add, &Basic Use, BasicUse
+Menu, HelpMenu, Add, Ad&vanced Use, Scripting
+Menu, HelpMenu, Add, &Homepage, Homepage
+Menu, HelpMenu, Add, &About..., About
+Menu, MgmtMenuBar, Add, &Help, :HelpMenu
+Gui,2: Menu, MgmtMenuBar
 Gui,2: Show, , Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,!p,Preferences
@@ -909,14 +925,6 @@ PButtonOK:
 Gosub,PButtonSave
 if PSaveSuccessful
 	Gui,2: Submit
-return
-
-;;; Threads for managing Texter bundles ;;;;
-ManageBundles:
-Gui,2: Add,Button, yp x10 GExport w80,Export
-Gui,2: Add,Button, yp xp+85 GImport w80,Import
-Gui,2: Add,Button, yp xp+85 GAddBundle w80,Add Bundle
-Gui,2: Add,Button, yp xp+85 GDeleteBundle w100,Remove Bundle
 return
 
 AddBundle:
