@@ -26,13 +26,14 @@ Gosub,BuildActive
 FileRead, EnterKeys, %EnterCSV%
 FileRead, TabKeys, %TabCSV%
 FileRead, SpaceKeys, %SpaceCSV%
-Gosub,GetFileList
+;Gosub,GetFileList
 Goto Start
 
 START:
 hotkey = 
 executed = false
 Input,input,V L99,{SC77}
+input:=hexify(input)
 IfInString,ActiveList,%input%|
 { ;input matches a hotstring -- see if hotkey matches a trigger for hotstring
 	if hotkey in %ignore%
@@ -56,8 +57,7 @@ Goto,START
 return
 
 EXECUTE:
-; this variable ensures that the active Window is receiving the text, activated before send
-WinGetActiveTitle,thisWindow
+WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
 ;; below added b/c SendMode Play appears not to be supported in Vista 
 if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
 	SendMode Input
@@ -66,7 +66,8 @@ else
 if (ExSound = 1)
 	SoundPlay, %ReplaceWAV%
 ReturnTo := 0
-StringLen,BSlength,input
+hexInput:=Dehexify(input)
+StringLen,BSlength,hexInput
 Send, {BS %BSlength%}
 FileRead, ReplacementText, %A_ScriptDir%\Active\replacements\%input%.txt
 StringLen,ClipLength,ReplacementText
@@ -225,11 +226,17 @@ TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
 return
 
-READINI: 
+READINI:
 IfNotExist bank
 	FileCreateDir, bank
 IfNotExist replacements
 	FileCreateDir, replacements
+else
+{
+	IniRead,hexified,texter.ini,Settings,Hexified
+	if hexified = ERROR
+		Gosub,HexAll
+}
 IfNotExist resources
 	FileCreateDir, resources
 IfNotExist bundles
@@ -400,9 +407,10 @@ return
 ButtonOK:
 Gui,1: Submit, NoHide
 Gui 1:+OwnDialogs
-IfExist, %A_ScriptDir%\%AddToDir%replacements\%RString%.txt
+hexRString:=hexify(RString)
+IfExist, %A_ScriptDir%\%AddToDir%replacements\%hexRString%.txt
 {
-	MsgBox,262144,Hotstring already exists, A replacement with the text %Rstring% already exists.  Would you like to try again?
+	MsgBox,262144,Hotstring already exists, A replacement with the text %RString% already exists.  Would you like to try again?
 	return
 }
 IsScript := (TextOrScript == "Script")
@@ -519,7 +527,8 @@ GetFileList:
 FileList =
 Loop, %A_ScriptDir%\replacements\*.txt
 {
-	FileList = %FileList%%A_LoopFileName%|
+	thisFile:=Dehexify(A_LoopFileName)
+	FileList = %FileList%%thisFile%|
 }
 StringReplace, FileList, FileList, .txt,,All
 return
@@ -643,16 +652,16 @@ return
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for management ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 MANAGE:
 GoSub,GetFileList
-StringReplace, FileList, FileList, .txt,,All
 Bundles =
 Loop,bundles\*,2
 {
 	Bundles = %Bundles%|%A_LoopFileName%
 	thisBundle = %A_LoopFileName%
-	Loop,bundles\%A_LoopFileName%\replacements\*.txt
-	{
-		thisBundle = %thisBundle%%A_LoopFileName%|
-	}
+;	Loop,bundles\%A_LoopFileName%\replacements\*.txt
+;	{
+;		thisReplacement:=Dehexify(A_LoopFileName)
+;		thisBundle = %thisBundle%%thisReplacement%|
+;	}
 	StringReplace, thisBundle, thisBundle, .txt,,All
 	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
 	%A_LoopFileName% = %thisBundle%
@@ -702,9 +711,10 @@ Loop,bundles\*,2
 	thisBundle = %A_LoopFileName%
 	Loop,bundles\%A_LoopFileName%\replacements\*.txt
 	{
-		thisBundle = %thisBundle%%A_LoopFileName%|
+		thisReplacement:=Dehexify(A_LoopFileName)
+		thisBundle = %thisBundle%%thisReplacement%|
 	}
-	StringReplace, thisBundle, thisBundle, .txt,,All
+;	StringReplace, thisBundle, thisBundle, .txt,,All
 	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
 	%A_LoopFileName% = %thisBundle%
 }
@@ -815,6 +825,7 @@ else
 MsgBox,1,Confirm Delete,Are you sure you want to delete this hotstring: %ActiveChoice%
 IfMsgBox, OK
 {
+	ActiveChoice:=Hexify(ActiveChoice)
 	FileDelete,%A_ScriptDir%\%RemoveFromDir%replacements\%ActiveChoice%.txt
 	DelFromBank(ActiveChoice, RemoveFromDir, "enter")
 	DelFromBank(ActiveChoice, RemoveFromDir, "tab")
@@ -831,6 +842,7 @@ return
 
 ShowString:
 GuiControlGet,ActiveChoice,,Choice
+ActiveChoice:=Hexify(ActiveChoice)
 GuiControlGet,CurrentBundle,,BundleTabs
 if CurrentBundle = Default
 	ReadFrom = 
@@ -921,6 +933,16 @@ else
 		FileCreateDir,bundles\%BundleName%\replacements
 		FileCreateDir,bundles\%BundleName%\bank
 		IniWrite,1,texter.ini,Bundles,%BundleName%
+		Bundles =
+		Loop,bundles\*,2
+		{
+			Bundles = %Bundles%|%A_LoopFileName%
+			;thisBundle = %A_LoopFileName%
+			if BundleName = %A_LoopFileName%
+				Bundles = %Bundles%|
+		}
+		GuiControl,,BundleTabs,|Default|%Bundles%
+		GuiControl,,Choice,|
 	}
 }
 return
@@ -936,6 +958,14 @@ MsgBox,4,Confirm bundle delete,Are you sure you want to remove the %CurrentBundl
 IfMsgBox, Yes
 {
 	FileRemoveDir,bundles\%CurrentBundle%,1
+	Bundles =
+	Loop,bundles\*,2
+	{
+		Bundles = %Bundles%|%A_LoopFileName%
+	}
+	GuiControl,,BundleTabs,|Default|%Bundles%
+	Gosub,GetFileList
+	GuiControl,,Choice,%FileList%
 }
 return
 
@@ -1047,6 +1077,7 @@ global SpaceCSV
 global EnterKeys
 global TabKeys
 global SpaceKeys
+	HotString:=Hexify(HotString)
 	successful := false
 	if (!EnterIsTrigger AND !TabIsTrigger AND !SpaceIsTrigger)
 	{
@@ -1098,6 +1129,7 @@ global SpaceKeys
 
 AddToBank(HotString, Bundle, Trigger)
 {
+	;HotString:=Dehexify(HotString)
 	BankFile = %Bundle%bank\%trigger%.csv
 	FileRead, Bank, %BankFile%
 	if HotString not in %Bank%
@@ -1111,6 +1143,7 @@ DelFromBank(HotString, Bundle, Trigger)
 {
 	BankFile = %Bundle%bank\%trigger%.csv
 	FileRead, Bank, %BankFile%
+	;HotString:=Dehexify(HotString)
 	if HotString in %Bank%
 	{
 		StringReplace, Bank, Bank, %HotString%`,,,All
@@ -1232,6 +1265,7 @@ textPrompt(thisText) {
 	;Hotkey,Space,
 	WinWaitClose,Enter desired text
 }
+return
 
 SubmitPrompt:
 Gui, 7: Submit
@@ -1239,6 +1273,66 @@ Gui, 7: Destroy
 StringReplace,ReplacementText,ReplacementText,`%p,%promptText%
 return
 
+
+HexAll:
+;MsgBox,Hexing time!
+Loop, %A_ScriptDir%\replacements\*.txt
+{
+	StringReplace, thisFile, A_LoopFileName, .txt,,All
+	thisFile:=Hexify(thisFile)
+	;MsgBox,% thisFile
+	FileMove,%A_ScriptDir%\replacements\%A_LoopFileName%,%A_ScriptDir%\replacements\%thisFile%.txt
+}
+Loop, %A_ScriptDir%\bank\*.csv
+{
+	FileRead,thisBank,%A_ScriptDir%\bank\%A_LoopFileName%
+	Loop,Parse,thisBank,CSV
+	{
+		thisString:=Hexify(A_LoopField)
+
+		hexBank = %hexBank%%thisString%,
+	}
+	FileDelete,%A_ScriptDir%\bank\%A_LoopFileName%
+	FileAppend,%hexBank%,%A_ScriptDir%\bank\%A_LoopFileName%
+}
+;TODO: Also hexify .csv files
+
+IniWrite,1,texter.ini,Settings,Hexified
 return
+
+Hexify(x) ;Stolen from Autoclip/Laszlo 
+{ 
+  StringLen,len,x 
+  format=%A_FormatInteger% 
+  SetFormat,Integer,Hex 
+  hex= 
+  Loop,%len% 
+  { 
+    Transform,y,Asc,%x% 
+    StringTrimLeft,y,y,2 
+    hex=%hex%%y% 
+    StringTrimLeft,x,x,1 
+  } 
+  SetFormat,Integer,%format% 
+  Return,hex
+} 
+
+DeHexify(x) 
+{ 
+   StringLen,len,x 
+   ;len:=(len-4)/2 
+   string= 
+   Loop,%len% 
+   { 
+      StringLeft,hex,x,2
+      hex=0x%hex% 
+      Transform,y,Chr,%hex% 
+      string=%string%%y% 
+      StringTrimLeft,x,x,2 
+   } 
+   Return,string 
+} 
+
+
 EXIT: 
 ExitApp 
