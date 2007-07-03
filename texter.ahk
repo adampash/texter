@@ -219,7 +219,7 @@ Send,{SC77}
 Return 
 
 ASSIGNVARS:
-Version = 0.4
+Version = 0.5
 EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
 TabCSV = %A_ScriptDir%\Active\bank\tab.csv
 SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
