@@ -30,6 +30,7 @@ FileRead, SpaceKeys, %SpaceCSV%
 Goto Start
 
 START:
+EnableTriggers(true)
 hotkey = 
 executed = false
 Input,input,V L99,{SC77}
@@ -59,6 +60,7 @@ return
 EXECUTE:
 WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
 ;; below added b/c SendMode Play appears not to be supported in Vista 
+EnableTriggers(false)
 if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
 	SendMode Input
 else
@@ -197,6 +199,7 @@ else
 	}
 ;	if ReturnTo > 0
 ;		Send, {Left %ReturnTo%}
+
 }
 SendMode Event
 IniRead,expanded,texter.ini,Stats,Expanded
@@ -718,9 +721,9 @@ return
 
 ListBundle:
 if A_GuiControl = BundleTabs
-	GuiControlGet,CurrentBundle,,BundleTabs
+	GuiControlGet,CurrentBundle,2:,BundleTabs
 IniRead,bundleCheck,texter.ini,Bundles,%CurrentBundle%
-GuiControl,,Choice,|
+GuiControl,2:,Choice,|
 Loop,bundles\*,2
 {
 	Bundles = %Bundles%|%A_LoopFileName%
@@ -738,11 +741,11 @@ Loop,bundles\*,2
 ;	GuiControl,,Choice,|
 ;else
 ;	GuiControl,,Choice,%RString%||
-GuiControl,,FullText,
-GuiControl,,EnterCbox,0
-GuiControl,,TabCbox,0
-GuiControl,,SpaceCbox,0
-GuiControl,,bundleCheck,%bundleCheck%
+GuiControl,2:,FullText,
+GuiControl,2:,EnterCbox,0
+GuiControl,2:,TabCbox,0
+GuiControl,2:,SpaceCbox,0
+GuiControl,2:,bundleCheck,%bundleCheck%
 if CurrentBundle = Default
 {
 	Gosub,GetFileList
@@ -752,7 +755,7 @@ if CurrentBundle = Default
 else
 {
 	StringTrimLeft,CurrentBundle,%CurrentBundle%,0
-	GuiControl,,Choice,%CurrentBundle%
+	GuiControl,2:,Choice,%CurrentBundle%
 }
 return
 
@@ -928,9 +931,16 @@ if PSaveSuccessful
 return
 
 AddBundle:
-InputBox,BundleName,New Bundle,What would you like to call your bundle?,,150,138,,,
+EnableTriggers(false)
+Hotkey,IfWinActive,New Bundle
+Hotkey,Space,NOSPACE
+Hotkey,IfWinActive
+InputBox,BundleName,New Bundle,What would you like to call your bundle? (no spaces),,160,150,,,
 if ErrorLevel
+{
+	EnableTriggers(true)
 	return
+}
 else
 {
 	IfExist bundles\%BundleName%
@@ -953,6 +963,11 @@ else
 		GuiControl,,Choice,|
 	}
 }
+EnableTriggers(true)
+return
+
+NOSPACE:
+Msgbox,0,Oops...,Whoops... Bundle names must not have any spaces.
 return
 
 DeleteBundle:
@@ -984,6 +999,7 @@ IfMsgBox, Yes
 {
 	IfNotExist %A_WorkingDir%\Texter Export
 		FileCreateDir,%A_WorkingDir%\Texter Exports
+	FileDelete,Texter Exports\%CurrentBundle%.texter
 	IniWrite,%CurrentBundle%,Texter Exports\%CurrentBundle%.texter,Info,Name
 	if (CurrentBundle = "Default")
 		BundleDir = 
@@ -1042,8 +1058,6 @@ if ErrorLevel = 0
 	Gui,8: Add,Button, x180 Default w80 GCreateBank,&OK
 	Gui, 8: Show,,Set default triggers
 }
-else
-	Msgbox,Error
 return
 
 CreateBank:
@@ -1063,6 +1077,16 @@ IfMsgBox,Yes
 }
 else
 	IniWrite,0,texter.ini,Bundles,%BundleName%
+Bundles =
+Loop,bundles\*,2
+{
+	Bundles = %Bundles%%A_LoopFileName%|
+	;thisBundle = %A_LoopFileName%
+	if BundleName = %A_LoopFileName%
+		Bundles = %Bundles%|
+}
+GuiControl,2:,BundleTabs,|Default|%Bundles%
+Gosub,ListBundle
 return
 
 ;; method written by Dustin Luck for writing to ini
@@ -1263,6 +1287,7 @@ update(program) {
 }
 
 textPrompt(thisText) {
+	Gui,7: +AlwaysOnTop -SysMenu +ToolWindow
 	Gui,7: Add,Text,x5 y5, Enter the text you want to insert:
 	Gui,7: Add,Edit,x20 y25 r1 vpromptText
 	Gui,7: Add,Text,x5 y50,Your text will be replace the `%p variable:
