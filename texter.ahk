@@ -1284,6 +1284,8 @@ return
 
 HexAll:
 ;MsgBox,Hexing time!
+FileCopyDir,replacements,resources\backup\replacements
+FileCopyDir,bank,resources\backup\bank
 Loop, %A_ScriptDir%\replacements\*.txt
 {
 	StringReplace, thisFile, A_LoopFileName, .txt,,All
@@ -1306,6 +1308,7 @@ Loop, %A_ScriptDir%\bank\*.csv
 ;TODO: Also hexify .csv files
 
 IniWrite,1,texter.ini,Settings,Hexified
+IniWrite,1,texter.ini,Bundles,Default
 return
 
 Hexify(x) ;Stolen from Autoclip/Laszlo 

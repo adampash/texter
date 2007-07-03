@@ -10,7 +10,18 @@ return
 
 
 EXPORT:
-GoSub,GetFileList
+Loop,bundles\*,2
+{
+	Bundles = %Bundles%|%A_LoopFileName%
+	thisBundle = %A_LoopFileName%
+	Loop,bundles\%A_LoopFileName%\replacements\*.txt
+	{
+		thisBundle = %thisBundle%%A_LoopFileName%|
+	}
+	StringReplace, thisBundle, thisBundle, .txt,,All
+	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
+	%A_LoopFileName% = %thisBundle%
+}
 StringReplace, FileList, FileList, .txt,,All
 Gui,5: Destroy
 Gui,5: font, s12, Arial  
@@ -21,7 +32,8 @@ Gui,5: Show, W600 H400, Texter Management
 return
 
 ExportOK:
-Gui,Submit
+Gui, 5: Submit
+Gui, 5: Destroy
 IfNotExist %A_WorkingDir%\Texter Export
 	FileCreateDir,%A_WorkingDir%\Texter Export
 Loop,Parse,ExportChoice,|
