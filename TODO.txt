@@ -15,7 +15,16 @@ Someday:
 - Allow for icons in Bundle tabs
 
 Features/fixes for 0.5 release:
-- Bundles
+x Bundles
+	x Export
+	x Import
+	x Add
+	x Remove
+x Enhanced management GUI
+x Excellent code optimizations by Dustin
+x Ability to include punctuation in hotstrings
+
+
 TODO:
 - fix Save: thread
 
