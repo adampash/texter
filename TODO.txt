@@ -1,18 +1,17 @@
-Someday:
-- Determine whether newkey thread called from GUI or hotkey (GuiControlGet,blah - if blah, then...?)
-- Import/Export bundles
-- Create bundled interface in Texter management - lets you enable/disable a bundle, add or remove to any bundle, etc.
-- Update everything so it's consistent with new bundled structure
-- Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
-- For bundles, create an active directory that updates what's enabled at any time
-- Move old replacements to their own directory
-- Custom triggers?
-- Fix gui weirdness for some ppl?
-- Export/Import via .ini files?
-- remove punctuation limitations so users can include puncutation in hotstrings - currently this doesn't work b/c scripts are saved as .txt files, so are limited by Windows naming conventions.  AutoClip had a solution for this (hexify), but not sure I want to get rid of my convention - like being able to identify by text file.
-- Add buttons/dropdown/something in Hotkey creation for insertion of clipboard, cursor, dates, time variables
-- Enable/Disable by application
-- Allow for icons in Bundle tabs
+Features/fixes for 0.6 release:
+- Bugs:
+	- Fix printable cheatsheet
+	- Fix right-click preferences bug
+	- Fix Import keyboard/trigger bug
+	- Hunt down/fix gina's memory issue/CSV memory issue (suspected same issue?)
+	- Fix CD drive error (need new, innocuous SC key that doesn't conflict with anything)
+	- Mouse incompatibility with Outlook?
+	- Need to change import/export format - just readline rather than use .ini - .ini too intense, opens and closes file with each read
+	
+- Features:
+	- Define custom hotkey
+	- Integrate AHK autocorrect script
+	- Disable via global hotkey?
 
 Features/fixes for 0.5 release:
 x Bundles
@@ -58,7 +57,21 @@ x Save last-used trigger as default for next hotstring
 x Turned off AutoTrim so that spaces at the end of replacements are retained
 x Double-click systray icon launches management
 
-
+Someday:
+- Determine whether newkey thread called from GUI or hotkey (GuiControlGet,blah - if blah, then...?)
+- Import/Export bundles
+- Create bundled interface in Texter management - lets you enable/disable a bundle, add or remove to any bundle, etc.
+- Update everything so it's consistent with new bundled structure
+- Add autoclose options for brackets, parenthesis, double-quote - turn on and off in preferences
+- For bundles, create an active directory that updates what's enabled at any time
+- Move old replacements to their own directory
+- Custom triggers?
+- Fix gui weirdness for some ppl?
+- Export/Import via .ini files?
+- remove punctuation limitations so users can include puncutation in hotstrings - currently this doesn't work b/c scripts are saved as .txt files, so are limited by Windows naming conventions.  AutoClip had a solution for this (hexify), but not sure I want to get rid of my convention - like being able to identify by text file.
+- Add buttons/dropdown/something in Hotkey creation for insertion of clipboard, cursor, dates, time variables
+- Enable/Disable by application
+- Allow for icons in Bundle tabs
 
 Low priority bugs:
 - Check oversized fonts (see http://lifehacker.com/software/texter/lifehacker-code-texter-windows-238306.php#c1047305)
