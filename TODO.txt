@@ -1,7 +1,7 @@
 Features/fixes for 0.6 release:
 - Bugs:
 	- Fix printable cheatsheet
-	- Fix right-click preferences bug
+	x Fix right-click preferences bug
 	- Fix Import keyboard/trigger bug
 	- Hunt down/fix gina's memory issue/CSV memory issue (suspected same issue?)
 	- Fix CD drive error (need new, innocuous SC key that doesn't conflict with anything)

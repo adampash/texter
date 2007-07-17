@@ -14,6 +14,7 @@ StringCaseSense On
 AutoTrim,off
 SetKeyDelay,-1
 SetWinDelay,0 
+Gosub,MAINWINTOOLBAR
 Gosub,UpdateCheck
 Gosub,ASSIGNVARS
 Gosub,READINI
@@ -658,6 +659,22 @@ IniWrite,%ToggleValue%,texter.ini,Preferences,%A_GuiControl%
 return
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation and GUI for management ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+MAINWINTOOLBAR:
+Menu, ToolsMenu, Add, P&references..., Preferences
+Menu, MgmtMenuBar, Add, &Tools, :ToolsMenu
+Menu, BundlesMenu, Add, &Export, Export
+Menu, BundlesMenu, Add, &Import, Import
+Menu, BundlesMenu, Add, &Add, AddBundle
+Menu, BundlesMenu, Add, &Remove, DeleteBundle
+Menu, MgmtMenuBar, Add, &Bundles, :BundlesMenu
+Menu, HelpMenu, Add, &Basic Use, BasicUse
+Menu, HelpMenu, Add, Ad&vanced Use, Scripting
+Menu, HelpMenu, Add, &Homepage, Homepage
+Menu, HelpMenu, Add, &About..., About
+Menu, MgmtMenuBar, Add, &Help, :HelpMenu
+Gui,2: Menu, MgmtMenuBar
+return
+
 MANAGE:
 GoSub,GetFileList
 Bundles =
@@ -676,7 +693,6 @@ Loop,bundles\*,2
 }
 StringReplace, FileList, FileList, .txt,,All
 StringTrimLeft,Bundles,Bundles,1
-Gui,2: Destroy
 Gui,2: Default
 Gui,2: Font, s12, Arial
 Gui,2: Add,Tab,x5 y5 h390 w597 vBundleTabs gListBundle,Default|%Bundles% ;;;;;; START ADDING BUNDLES
@@ -699,19 +715,6 @@ IniRead,bundleCheck,texter.ini,Bundles,Default
 Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+400 yp+50,Enabled
 Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+30,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
-Menu, ToolsMenu, Add, P&references..., Preferences
-Menu, MgmtMenuBar, Add, &Tools, :ToolsMenu
-Menu, BundlesMenu, Add, &Export, Export
-Menu, BundlesMenu, Add, &Import, Import
-Menu, BundlesMenu, Add, &Add, AddBundle
-Menu, BundlesMenu, Add, &Remove, DeleteBundle
-Menu, MgmtMenuBar, Add, &Bundles, :BundlesMenu
-Menu, HelpMenu, Add, &Basic Use, BasicUse
-Menu, HelpMenu, Add, Ad&vanced Use, Scripting
-Menu, HelpMenu, Add, &Homepage, Homepage
-Menu, HelpMenu, Add, &About..., About
-Menu, MgmtMenuBar, Add, &Help, :HelpMenu
-Gui,2: Menu, MgmtMenuBar
 Gui,2: Show, , Texter Management
 Hotkey,IfWinActive, Texter Management
 Hotkey,!p,Preferences
@@ -921,7 +924,7 @@ return
 
 2GuiEscape:
 PButtonCancel:
-Gui,2: Destroy
+Gui,2: Hide
 return
 
 PButtonOK:
