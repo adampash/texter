@@ -1,6 +1,6 @@
 Features/fixes for 0.6 release:
 - Bugs:
-	- Fix printable cheatsheet
+	x Fix printable cheatsheet
 	x Fix right-click preferences bug
 	- Fix Import keyboard/trigger bug
 	- Hunt down/fix gina's memory issue/CSV memory issue (suspected same issue?)
