@@ -924,13 +924,16 @@ return
 
 2GuiEscape:
 PButtonCancel:
-Gui,2: Hide
+Gui,2: Destroy
 return
 
 PButtonOK:
 Gosub,PButtonSave
 if PSaveSuccessful
+{
 	Gui,2: Submit
+	Gui,2: Destroy
+}
 return
 
 AddBundle:
