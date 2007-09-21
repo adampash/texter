@@ -1,0 +1,32 @@
+Hexify(x) ;Stolen from Autoclip/Laszlo 
+{ 
+  StringLen,len,x 
+  format=%A_FormatInteger% 
+  SetFormat,Integer,Hex 
+  hex= 
+  Loop,%len% 
+  { 
+    Transform,y,Asc,%x% 
+    StringTrimLeft,y,y,2 
+    hex=%hex%%y% 
+    StringTrimLeft,x,x,1 
+  } 
+  SetFormat,Integer,%format% 
+  Return,hex
+} 
+
+DeHexify(x) 
+{ 
+   StringLen,len,x 
+   ;len:=(len-4)/2 
+   string= 
+   Loop,%len% 
+   { 
+      StringLeft,hex,x,2
+      hex=0x%hex% 
+      Transform,y,Chr,%hex% 
+      string=%string%%y% 
+      StringTrimLeft,x,x,2 
+   } 
+   Return,string 
+} 
