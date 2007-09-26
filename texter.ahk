@@ -406,6 +406,8 @@ Return
 #Include includes\functions\updatecheck.ahk		; If enabled, checks for updates to Texter on startup
 #Include includes\functions\hexall.ahk					; Converts pre-0.5 version of Texter to the new hexified replacement format... may remove in future versions
 #Include includes\functions\hexify.ahk					; Translates back and forth between hex values for replacements
+#Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
+
 
 ; #Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
 ; #Include includes\functions\autoclose.ahk			; Automatically closes bracketed puntuation, like parentheticals - not currently implemented
