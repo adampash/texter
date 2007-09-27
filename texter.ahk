@@ -38,10 +38,18 @@ SetTimer, MonitorWindows, 500
 Loop
 {
   ;wait for a matching hotstring
-  if Search <>
+  if (Disable = 1)
+  {
+		continue
+  }
+  if Starting <>
   {
 	  Loop
 	  { ;grab input one character at a time looking for a match
+		if (Disable = 1)
+		{
+			break
+		}
 	    Input, UserInput, L1 V, %EndKeys%
 ;Tooltip, Input received, 10, 10
 	    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
@@ -125,13 +133,13 @@ Loop
     PossibleMatch=
 	PossHexMatch=
     Match=
-	Search=0
+	Starting=1
   }
   else
   {
     PossibleMatch=%PossibleMatch%%UserInput%
     SendInput, %UserInput%
-	Search=
+	Starting=
   }
 }
 return
@@ -308,7 +316,9 @@ ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
-EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{SC77}
+SpecialKey = SC77
+EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{%SpecialKey%}
+Disable = 0
 return
 
 READINI:

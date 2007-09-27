@@ -74,6 +74,12 @@ If (smanagehotkey != managehotkey)
 	IniWrite,%managehotkey%,texter.ini,Hotkey,Management
 }
 IniWrite,%disablehotkey%,texter.ini,Hotkey,Disable
+if disablehotkey <>
+{
+	Hotkey,IfWinNotActive,Texter Preferences
+	Hotkey,%disablehotkey%,DISABLE
+	Hotkey,IfWinActive
+}
 ;code optimization -- calculate MODE from ModeGroup
 MODE := ModeGroup - 1
 IniWrite,%MODE%,texter.ini,Settings,Mode
