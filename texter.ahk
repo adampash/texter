@@ -34,28 +34,34 @@ FileRead, SpaceKeys, %SpaceCSV%
 ;Goto Start
 WinGet PrevWinID, ID, A
 SetTimer, MonitorWindows, 500
-EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{SC77}
 
 Loop
 {
   ;wait for a matching hotstring
-  Loop
-  { ;grab input one character at a time looking for a match
-    Input, UserInput, L1 V, %EndKeys%
+  if Search <>
+  {
+	  Loop
+	  { ;grab input one character at a time looking for a match
+	    Input, UserInput, L1 V, %EndKeys%
 ;Tooltip, Input received, 10, 10
-    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
-    { ;any end key resets the search for a match
-      PossibleMatch=
-    }
-    else
-    {
-      PossibleMatch=%PossibleMatch%%UserInput% 
-    }
+	    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
+	    { ;any end key resets the search for a match
+	      PossibleMatch=
+	    }
+	    else
+	    {
+	      PossibleMatch=%PossibleMatch%%UserInput% 
+	    }
 ;Tooltip, PossibleMatch= %PossibleMatch%    
-    IfInString, HotStrings, |%PossibleMatch%|
-    { ;found a match - go to trigger search
-      break
-    }
+	    IfInString, HotStrings, |%PossibleMatch%|
+	    { ;found a match - go to trigger search
+	      break
+	    }
+	  }			; end of inner loop
+  }
+  else
+  {
+		;msgbox, empty
   }
   if PossibleMatch in %NoTrigger%
    { ;matched in triggerless list
@@ -119,11 +125,13 @@ Loop
     PossibleMatch=
 	PossHexMatch=
     Match=
+	Search=0
   }
   else
   {
     PossibleMatch=%PossibleMatch%%UserInput%
     SendInput, %UserInput%
+	Search=
   }
 }
 return
@@ -300,6 +308,7 @@ ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
+EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{SC77}
 return
 
 READINI:
