@@ -14,10 +14,10 @@ StringCaseSense On
 AutoTrim,off
 SetKeyDelay,-1
 SetWinDelay,0 
-Gosub,UpdateCheck
+;Gosub,UpdateCheck
 Gosub,ASSIGNVARS
 Gosub,READINI
-EnableTriggers(true)
+;EnableTriggers(true)
 Gosub,RESOURCES
 Gosub,TRAYMENU
 Gosub,BuildActive
@@ -31,40 +31,109 @@ FileRead, EnterKeys, %EnterCSV%
 FileRead, TabKeys, %TabCSV%
 FileRead, SpaceKeys, %SpaceCSV%
 ;Gosub,GetFileList
-Goto Start
+;Goto Start
+WinGet PrevWinID, ID, A
+SetTimer, MonitorWindows, 500
+EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{SC77}
 
-START:
-EnableTriggers(true)
-hotkey = 
-executed = false
-Input,input,V L99,{SC77}
-input:=hexify(input)
-IfInString,ActiveList,%input%|
-{ ;input matches a hotstring -- see if hotkey matches a trigger for hotstring
-	if hotkey in %ignore%
-	{
-		StringTrimLeft,Bank,hotkey,1
-		StringTrimRight,Bank,Bank,1
-		Bank = %Bank%Keys
-		Bank := %Bank%
-		if input in %Bank%
-		{
-			GoSub, EXECUTE
-			executed = true
-		}
-	}
-}
-if executed = false
+Loop
 {
-	SendInput,%hotkey%
+  ;wait for a matching hotstring
+  Loop
+  { ;grab input one character at a time looking for a match
+    Input, UserInput, L1 V, %EndKeys%
+;Tooltip, Input received, 10, 10
+    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
+    { ;any end key resets the search for a match
+      PossibleMatch=
+    }
+    else
+    {
+      PossibleMatch=%PossibleMatch%%UserInput% 
+    }
+;Tooltip, PossibleMatch= %PossibleMatch%    
+    IfInString, HotStrings, |%PossibleMatch%|
+    { ;found a match - go to trigger search
+      break
+    }
+  }
+  if PossibleMatch in %NoTrigger%
+   { ;matched in triggerless list
+    Match := PossibleMatch
+  }
+  else
+  { ;get a single character of input to look for triggers
+    Input, UserInput, L1, %EndKeys%
+;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
+    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
+    { ;trigger found
+      AltState := GetKeyState("Alt", "P")
+      CtrlState := GetKeyState("Ctrl", "P")
+      ShiftState := GetKeyState("Shift", "P")
+      LWinState := GetKeyState("LWin", "P")
+      RWinState := GetKeyState("RWin", "P")
+      WinState := LWinState || RWinState
+      if (AltState || CtrlState || ShiftState || WinState)
+      {
+        PossibleMatch=
+      }
+      Trigger := SubStr(ErrorLevel, 8)
+      Bank = %Trigger%Keys
+      Bank := %Bank%
+	  PossHexMatch := Hexify(PossibleMatch)
+      if PossHexMatch in %Bank%
+      { ;hotstring/trigger match
+        Match := PossHexMatch
+      }
+      else
+      {
+        if AltState
+        {
+          Send, !`{%Trigger%`}
+        }
+        else if CtrlState
+        {
+          Send, ^`{%Trigger%`}
+        }
+        else if ShiftState
+        {
+          Send, +`{%Trigger%`}
+        }
+        else if WinState
+        {
+          Send, #`{%Trigger%`}
+        }
+        else
+        {
+          Send, `{%Trigger%`}
+        }
+        ;MsgBox, Trigger=%Trigger%
+      }
+      PossibleMatch=
+    }
+  }
+  if Match<>
+  {
+    ;MsgBox, %Match%
+	GoSub, EXECUTE
+    PossibleMatch=
+	PossHexMatch=
+    Match=
+  }
+  else
+  {
+    PossibleMatch=%PossibleMatch%%UserInput%
+    SendInput, %UserInput%
+  }
 }
-Goto,START
 return
+
+~$BS::StringTrimRight, PossibleMatch, PossibleMatch, 1
 
 EXECUTE:
 WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
 ;; below added b/c SendMode Play appears not to be supported in Vista 
-EnableTriggers(false)
+;EnableTriggers(false)
 if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
 	SendMode Input
 else
@@ -72,10 +141,10 @@ else
 if (ExSound = 1)
 	SoundPlay, %ReplaceWAV%
 ReturnTo := 0
-hexInput:=Dehexify(input)
+hexInput:=Dehexify(Match)
 StringLen,BSlength,hexInput
 Send, {BS %BSlength%}
-FileRead, ReplacementText, %A_ScriptDir%\Active\replacements\%input%.txt
+FileRead, ReplacementText, %A_ScriptDir%\Active\replacements\%Match%.txt
 StringLen,ClipLength,ReplacementText
 
 IfInString,ReplacementText,::scr::
@@ -271,6 +340,9 @@ ExSound := GetValFromIni("Preferences","ExSound",1)
 Synergy := GetValFromIni("Preferences","Synergy",0)
 AutoCorrect := GetValFromIni("Preferences","AutoCorrect",1)
 
+
+
+
 ;; Enable hotkeys for creating new keys and managing replacements
 if otfhotkey <>
 {
@@ -292,94 +364,8 @@ if disablehotkey <>
 	Hotkey,IfWinActive
 }
 
-
-;; This section is intended to exit the input in the Start thread whenever the mouse is clicked or 
-;; the user Alt-Tabs to another window so that Texter is prepared
 ~LButton::Send,{SC77}
-$!Tab::
-{
-	GetKeyState,capsL,Capslock,T
-	SetCapsLockState,Off
-	pressed = 0
-	Loop {
-		Sleep,10
-		GetKeyState,altKey,Alt,P
-		GetKeyState,tabKey,Tab,P
-		if (altKey = "D") and (tabKey = "D")
-		{
-			if pressed = 0
-			{
-				pressed = 1
-				Send,{Alt down}{Tab}
-				continue
-			}
-			else
-			{
-				continue
-			}
-		}
-		else if (altKey = "D")
-		{
-			pressed = 0
-			continue
-		}
-		else
-		{
-			Send,{Alt up}
-			break
-		}
-	}
-	Send,{SC77}
-	if (capsL = "D")
-		SetCapsLockState,On
-}
 
-$!+Tab::
-{
-	GetKeyState,capsL,Capslock,T
-	SetCapsLockState,Off
-	pressed = 0
-	Loop {
-		Sleep,10
-		GetKeyState,altKey,Alt,P
-		GetKeyState,tabKey,Tab,P
-		GetKeyState,shiftKey,Shift,P
-		if (altKey = "D") and (tabKey = "D") and (shiftKey = "D")
-		{
-			if pressed = 0
-			{
-				pressed = 1
-				Send,{Alt down}{Shift down}{Tab}
-				;Send,{Shift up}
-				continue
-			}
-			else
-			{
-				continue
-			}
-		}
-		else if (altKey = "D") and (shiftKey != "D")
-		{
-			pressed = 0
-			Send,{Shift up}
-			break
-		}
-		else if (altKey = "D") and (shiftKey = "D")
-		{
-			pressed = 0
-			continue
-		}
-		else
-		{
-			Send,{Alt up}{Shift up}
-			break
-		}
-	}
-;	Send,{SC77}
-	if (capsL = "D")
-		SetCapsLockState,On
-}
-Return
 
 ; GUI
 #Include includes\GUI\newkey_GUI.ahk     		 	; the GUI for new on-the-fly hotstring creation
@@ -407,7 +393,7 @@ Return
 #Include includes\functions\hexall.ahk					; Converts pre-0.5 version of Texter to the new hexified replacement format... may remove in future versions
 #Include includes\functions\hexify.ahk					; Translates back and forth between hex values for replacements
 #Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
-
+#Include includes\functions\MonitorWindows.ahk 	; monitors active window and clears input when window switches
 
 ; #Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
 ; #Include includes\functions\autoclose.ahk			; Automatically closes bracketed puntuation, like parentheticals - not currently implemented

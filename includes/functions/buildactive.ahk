@@ -41,9 +41,12 @@ FileRead, EnterKeys, %A_WorkingDir%\Active\bank\enter.csv
 FileRead, TabKeys, %A_WorkingDir%\Active\bank\tab.csv
 FileRead, SpaceKeys, %A_WorkingDir%\Active\bank\space.csv
 ActiveList =
+HotStrings= |             ; added this variable for Dustin's new trigger method... need to sometime check and see if ActiveList is necessary
 Loop, Active\replacements\*.txt
 {
 	ActiveList = %ActiveList%%A_LoopFileName%|
+	This_HotString := Dehexify(A_LoopFileName)
+	HotStrings = %HotStrings%%This_HotString%|
 }
 StringReplace, ActiveList, ActiveList, .txt,,All
 
