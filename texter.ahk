@@ -74,8 +74,10 @@ Loop
   }
   else
   { ;get a single character of input to look for triggers
+    Transform, CtrlC, Chr, 3
     Input, UserInput, L1 M, %EndKeys%
-	;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
+		;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
+	;msgbox %userinput%
     if (SubStr(ErrorLevel, 1, 6) = "EndKey")
     { ;trigger found
       AltState := GetKeyState("Alt", "P")
@@ -87,6 +89,23 @@ Loop
       if (AltState || CtrlState || ShiftState || WinState)
       {	
         PossibleMatch=
+		Modifier=
+		if AltState
+		{
+		  Modifier = !
+		}
+		if CtrlState
+		{
+		  Modifier = %Modifier%^
+		}
+		if ShiftState
+		{
+		  Modifier = %Modifier%+
+		}
+		if WinState
+		{
+		  Modifier = %Modifier%#
+		}
       }
       Trigger := SubStr(ErrorLevel, 8)
 	  if (Trigger = "Backspace")
@@ -118,35 +137,32 @@ Loop
       }
       else
       {
-        if AltState
+	    if (AltState && !CtrlState && !ShiftState && !WinState)
         {
-          Send, {Alt Down}`{%Trigger%`}
-		  AltState := GetKeyState("Alt", "P")
-		  Loop
-		  {
-		    if AltState
-			{
-			  AltState := GetKeyState("Alt", "P")
-			}
-			else
-			{
-			  Send, {Alt Up}
-			  break
-			}
-		  }
-        }
-        else if CtrlState
-        {
-          Send, ^`{%Trigger%`}
-        }
-        else if ShiftState
-        {
-          Send, +`{%Trigger%`}
-        }
-        else if WinState
-        {
-          Send, #`{%Trigger%`}
-        }
+		  ;Msgbox alt alone
+          if AltState
+          {
+            Send, {Alt Down}`{%Trigger%`}
+		    AltState := GetKeyState("Alt", "P")
+		    Loop
+		    {
+		      if AltState
+			  {
+			    AltState := GetKeyState("Alt", "P")
+			  }
+			  else
+			  {
+			    Send, {Alt Up}
+			    break
+			  }
+		    }
+          }
+		}
+		else if (AltState || CtrlState || ShiftState || WinState)
+		{
+		  ;msgbox not alone: %modifier%
+		  Send, %Modifier%`{%Trigger%`}
+		}
         else
         {
 		  ;MsgBox %Trigger%
@@ -168,14 +184,23 @@ Loop
   }
   else
   {
+    if UserInput = %CtrlC% ; this doesn't seem like the best fix, but Ctrl-C was not working correctly w/out
+	{								  ; all other modifiers + letters seem to be working fine
+	  SendInput, ^c
+	}
+	;msgbox sending %userinput%
+	else
+	{
     PossibleMatch=%PossibleMatch%%UserInput%
     SendRaw, %UserInput%  ; SendRaw ensures special characters like #, !, {}, etc. are interpreted and sent correctly
 	Starting=
+	}
   }
 }
 return
 
 ;~$BS::StringTrimRight, PossibleMatch, PossibleMatch, 1
+
 
 EXECUTE:
 WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
@@ -348,7 +373,7 @@ TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
 SpecialKey = vkFF
-EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{%SpecialKey%}
+EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{%SpecialKey%}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}
 Disable = 0
 return
 
@@ -357,12 +382,6 @@ IfNotExist bank
 	FileCreateDir, bank
 IfNotExist replacements
 	FileCreateDir, replacements
-else
-{
-	IniRead,hexified,texter.ini,Settings,Hexified
-	if hexified = ERROR
-		Gosub,HexAll
-}
 IfNotExist resources
 	FileCreateDir, resources
 IfNotExist bundles
@@ -440,7 +459,7 @@ if disablehotkey <>
 #Include includes\functions\resources.ahk			; Installs file resources like images and sounds
 #Include includes\functions\printablelist.ahk			; Builds Texter Replacement Guide HTML file 
 #Include includes\functions\updatecheck.ahk		; If enabled, checks for updates to Texter on startup
-#Include includes\functions\hexall.ahk					; Converts pre-0.5 version of Texter to the new hexified replacement format... may remove in future versions
+; #Include includes\functions\hexall.ahk					; Converts pre-0.5 version of Texter to the new hexified replacement format... may remove in future versions
 #Include includes\functions\hexify.ahk					; Translates back and forth between hex values for replacements
 #Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
 #Include includes\functions\MonitorWindows.ahk 	; monitors active window and clears input when window switches
