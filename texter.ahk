@@ -25,7 +25,8 @@ Gosub,BuildActive
 ; Autocorrect and autoclose not yet fully implemented
 ;if AutoCorrect = 1
 ;	Gosub,AUTOCORRECT
-;Gosub,AUTOCLOSE
+;if AutoClose = 1
+;	Gosub,AUTOCLOSE
 
 FileRead, EnterKeys, %EnterCSV%
 FileRead, TabKeys, %TabCSV%
@@ -51,7 +52,7 @@ Loop
 			break
 		}
 	    Input, UserInput, L1 V, %EndKeys%
-;Tooltip, Input received, 10, 10
+		;Tooltip, Input received, 10, 10
 	    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
 	    { ;any end key resets the search for a match
 	      PossibleMatch=
@@ -60,16 +61,12 @@ Loop
 	    {
 	      PossibleMatch=%PossibleMatch%%UserInput% 
 	    }
-;Tooltip, PossibleMatch= %PossibleMatch%    
+		;Tooltip, PossibleMatch= %PossibleMatch%    
 	    IfInString, HotStrings, |%PossibleMatch%|
 	    { ;found a match - go to trigger search
 	      break
 	    }
 	  }			; end of inner loop
-  }
-  else
-  {
-		;msgbox, empty
   }
   if PossibleMatch in %NoTrigger%
    { ;matched in triggerless list
@@ -77,8 +74,8 @@ Loop
   }
   else
   { ;get a single character of input to look for triggers
-    Input, UserInput, L1, %EndKeys%
-;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
+    Input, UserInput, L1 M, %EndKeys%
+	;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
     if (SubStr(ErrorLevel, 1, 6) = "EndKey")
     { ;trigger found
       AltState := GetKeyState("Alt", "P")
@@ -88,13 +85,33 @@ Loop
       RWinState := GetKeyState("RWin", "P")
       WinState := LWinState || RWinState
       if (AltState || CtrlState || ShiftState || WinState)
-      {
+      {	
         PossibleMatch=
       }
       Trigger := SubStr(ErrorLevel, 8)
-      Bank = %Trigger%Keys
-      Bank := %Bank%
-	  PossHexMatch := Hexify(PossibleMatch)
+	  if (Trigger = "Backspace")
+	  { ; trim possmatch so trigger still works if miskeyed
+	    if AltState
+		{
+		  Send, !{BS}
+		}
+		else if CtrlState
+        {
+          Send, ^{BS}
+        }
+		else
+		{
+		  Send, {BS}
+		}
+	    StringTrimRight, PossibleMatch, PossibleMatch, 1
+		continue
+	  }
+	  if (Trigger != "not found")			; the special trigger key vkFF returns "not found" as the trigger; this check avoids it
+	  {
+	      Bank = %Trigger%Keys
+	      Bank := %Bank%
+		  PossHexMatch := Hexify(PossibleMatch)	
+	  }
       if PossHexMatch in %Bank%
       { ;hotstring/trigger match
         Match := PossHexMatch
@@ -103,7 +120,20 @@ Loop
       {
         if AltState
         {
-          Send, !`{%Trigger%`}
+          Send, {Alt Down}`{%Trigger%`}
+		  AltState := GetKeyState("Alt", "P")
+		  Loop
+		  {
+		    if AltState
+			{
+			  AltState := GetKeyState("Alt", "P")
+			}
+			else
+			{
+			  Send, {Alt Up}
+			  break
+			}
+		  }
         }
         else if CtrlState
         {
@@ -119,6 +149,7 @@ Loop
         }
         else
         {
+		  ;MsgBox %Trigger%
           Send, `{%Trigger%`}
         }
         ;MsgBox, Trigger=%Trigger%
@@ -138,13 +169,13 @@ Loop
   else
   {
     PossibleMatch=%PossibleMatch%%UserInput%
-    SendInput, %UserInput%
+    SendRaw, %UserInput%  ; SendRaw ensures special characters like #, !, {}, etc. are interpreted and sent correctly
 	Starting=
   }
 }
 return
 
-~$BS::StringTrimRight, PossibleMatch, PossibleMatch, 1
+;~$BS::StringTrimRight, PossibleMatch, PossibleMatch, 1
 
 EXECUTE:
 WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
@@ -316,7 +347,7 @@ ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
-SpecialKey = SC77
+SpecialKey = vkFF
 EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{%SpecialKey%}
 Disable = 0
 return
@@ -383,7 +414,7 @@ if disablehotkey <>
 	Hotkey,IfWinActive
 }
 
-~LButton::Send,{SC77}
+~LButton::Send,{%SpecialKey%}
 
 
 ; GUI
