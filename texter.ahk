@@ -39,7 +39,7 @@ SetTimer, MonitorWindows, 500
 Loop
 {
   ;wait for a matching hotstring
-  if (Disable = 1)
+  if (Disable = 1 || CurrWinClass = "AutoHotkeyGUI")
   {
 		continue
   }
@@ -47,7 +47,7 @@ Loop
   {
 	  Loop
 	  { ;grab input one character at a time looking for a match
-		if (Disable = 1)
+		if (Disable = 1 || CurrWinClass = "AutoHotkeyGUI")
 		{
 			break
 		}
@@ -74,7 +74,7 @@ Loop
   }
   else
   { ;get a single character of input to look for triggers
-    Transform, CtrlC, Chr, 3
+    Transform, CtrlC, Chr, 3  ; used for the Ctrl-C check
     Input, UserInput, L1 M, %EndKeys%
 		;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
 	;msgbox %userinput%

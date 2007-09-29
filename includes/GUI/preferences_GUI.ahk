@@ -1,7 +1,7 @@
 PREFERENCES:
 Gui,3: Destroy
 Gui,3: +owner2
-Gui,3: Add, Tab,x5 y5 w306 h280,General|Print|Stats ;|Import|Export Add these later
+Gui,3: Add, Tab,x5 y5 w306 h280 vTabs,General|Print|Stats ;|Import|Export Add these later
 IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
 Gui,3: Add,Text,x10 y40,On-the-Fly shortcut:
 Gui,3: Add,Hotkey,xp+10 yp+20 w100 vsotfhotkey, %otfhotkey%
@@ -44,6 +44,7 @@ Gui,3: Add,Text,x25 y100,Hours saved:             %time_saved% (assuming 400 cha
 ;Gui,3: Add,Button,x230 y200 w75 GSETTINGSCANCEL,&Cancel
 Gui 2:+Disabled
 Gui,3: Show,,Texter Preferences
+GuiControl,3: Focus, Tabs
 Return
 
 SETTINGSOK:

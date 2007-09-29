@@ -8,7 +8,7 @@ Features/fixes for 0.6 release:
 	x Fix CD drive error (need new, innocuous SC key that doesn't conflict with anything) -- Dustin's new trigger method fixes this
 	- Mouse incompatibility with Outlook?
 	- Need to change import/export format - just readline rather than use .ini - .ini too intense, opens and closes file with each read
-	- Set focus on Preferences so On-the-fly shortcut doesn't immediately blank out to "None"
+	x Set focus on Preferences so On-the-fly shortcut doesn't immediately blank out to "None"
 	
 - Features:
 	- Define custom hotkey
