@@ -66,7 +66,7 @@ Loop
 	    { ;found a match - go to trigger search
 	      break
 	    }
-	  }			; end of inner loop
+	  }			; end of inside loop
   }
   if PossibleMatch in %NoTrigger%
    { ;matched in triggerless list
@@ -155,6 +155,8 @@ Loop
 			    Send, {Alt Up}
 			    break
 			  }
+			  PossibleMatch=
+			  Starting=1
 		    }
           }
 		}
@@ -433,8 +435,9 @@ if disablehotkey <>
 	Hotkey,IfWinActive
 }
 
-~LButton::Send,{%SpecialKey%}
-
+~LButton::PossibleMatch=
+~RButton::PossibleMatch=
+~MButton::PossibleMatch=
 
 ; GUI
 #Include includes\GUI\newkey_GUI.ahk     		 	; the GUI for new on-the-fly hotstring creation
