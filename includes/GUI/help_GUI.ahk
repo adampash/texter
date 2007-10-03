@@ -1,5 +1,6 @@
 HELP:
 Gui,5: Destroy
+Gui,5: +owner
 Gui,5: Add,Picture,x200 y5,%TexterPNG%
 Gui,5: font, s36, Courier New
 Gui,5: Add, Text,x20 y40,Texter

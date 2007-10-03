@@ -68,7 +68,7 @@ IfMsgBox, Yes
 	IfNotExist %A_WorkingDir%\Texter Export
 		FileCreateDir,%A_WorkingDir%\Texter Exports
 	FileDelete,Texter Exports\%CurrentBundle%.texter
-	IniWrite,%CurrentBundle%,Texter Exports\%CurrentBundle%.texter,Info,Name
+	FileAppend,%CurrentBundle%`n,Texter Exports\%CurrentBundle%.texter
 	if (CurrentBundle = "Default")
 		BundleDir = 
 	else
@@ -78,8 +78,8 @@ IfMsgBox, Yes
 		FileRead,replacement,%A_LoopFileFullPath%
 		IfInString,replacement,`r`n
 			StringReplace,replacement,replacement,`r`n,`%bundlebreak,All
-		IniWrite,%A_LoopFileName%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Hotstring
-		IniWrite,%replacement%,Texter Exports\%CurrentBundle%.texter,%A_Index%,Replacement
+		FileAppend,%A_LoopFileName%`n,Texter Exports\%CurrentBundle%.texter
+		FileAppend,%replacement%`n,Texter Exports\%CurrentBundle%.texter
 	}
 	MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nWould you like to see the %CurrentBundle% bundle?
 IfMsgBox, Yes
@@ -92,7 +92,9 @@ IMPORT:
 FileSelectFile, ImportBundle,,, Import Texter bundle, *.texter
 if ErrorLevel = 0
 {
-	IniRead,BundleName,%ImportBundle%,Info,Name
+	FileReadLine, BundleName, %ImportBundle%, 1
+	InputBox, BundleName, Bundle Name, What would you like to call this bundle?,,,,,,,,%BundleName%
+	BundleDir = bundles\%BundleName%
 	IfExist bundles\%BundleName%
 	{
 		MsgBox,4,%BundleName% bundle already installed,%BundleName% bundle already installed.`nWould you like to overwrite previous %BundleName% bundle?
@@ -103,21 +105,41 @@ if ErrorLevel = 0
 			FileRemoveDir,bundles\%BundleName%,1
 		}
 	}
-	FileCreateDir,bundles\%BundleName%
-	FileCreateDir,bundles\%BundleName%\replacements
-	FileCreateDir,bundles\%BundleName%\bank
-	
-	Loop
+	if (BundleName = "Default")
 	{
-		IniRead,file,%ImportBundle%,%A_Index%,Hotstring
-		IniRead,replacement,%ImportBundle%,%A_Index%,Replacement
-		StringReplace, hotstring, file, .txt
-		StringReplace,replacement,replacement,`%bundlebreak,`r`n,All
-		bundleCollection = %hotstring%,%bundleCollection%
-		if file = ERROR
-				break
-		else
-			FileAppend,%replacement%,bundles\%BundleName%\replacements\%file%
+	  MsgBox,4,%BundleName% bundle already exitsts,%BundleName% bundle already installed.`nWould you like to overwrite previous %BundleName% bundle?
+	  IfMsgBox, No
+	  BundleDir= 
+	  	return
+	}
+	if BundleDir <>
+	{
+	  FileCreateDir,%BundleDir%
+	  FileCreateDir,%BundleDir%\replacements
+	  FileCreateDir,%BundleDir%\bank
+	}
+	LineSwitch := 0
+	Loop, Read, %ImportBundle%
+	{
+	  if (A_Index = 1)
+	  {
+		continue
+	  }
+	  if (LineSwitch = 0)
+	  {
+	    LineSwitch := 1 - LineSwitch
+		FileName = %A_LoopReadLine%
+		StringReplace, Hotstring, FileName, .txt
+		bundleCollection = %Hotstring%,%bundleCollection%
+	  }
+	  else
+	  {
+	    LineSwitch := 1 - LineSwitch
+		StringReplace,Replacement, A_LoopReadLine,`%bundlebreak,`r`n,All
+		FileAppend, %Replacement%, %BundleDir%\replacements\%FileName%
+		FileName=
+		Replacement=
+		}
 	}
 	Gui, 8: Add, Text, Section x10 y10,What triggers would you like to use with the %BundleName% bundle?
 	Gui,8: Add, Checkbox, vEnterCbox x30, Enter
@@ -154,5 +176,6 @@ Loop,bundles\*,2
 		Bundles = %Bundles%|
 }
 GuiControl,2:,BundleTabs,|Default|%Bundles%
+CurrentBundle = %BundleName%
 Gosub,ListBundle
 return

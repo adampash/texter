@@ -1,6 +1,7 @@
 AUTOCORRECT:
 #Hotstring R
-#Hotstring *
+;#Hotstring *
+#Hotstring EndChars -()[]{}:;'"/\,.?!`n `t
 ::abandonned::abandoned
 ::abbout::about
 ::aberation::aberration

@@ -1,6 +1,6 @@
 ABOUT:
 Gui,4: Destroy
-Gui,4: +owner2
+Gui,4: +owner
 Gui,4: Add,Picture,x200 y0,%TexterPNG%
 Gui,4: font, s36, Courier New
 Gui,4: Add, Text,x10 y35,Texter

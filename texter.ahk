@@ -467,7 +467,7 @@ if disablehotkey <>
 #Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
 #Include includes\functions\MonitorWindows.ahk 	; monitors active window and clears input when window switches
 
-; #Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
+ #Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
 ; #Include includes\functions\autoclose.ahk			; Automatically closes bracketed puntuation, like parentheticals - not currently implemented
 
 EXIT: 

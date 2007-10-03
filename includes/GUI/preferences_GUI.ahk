@@ -1,6 +1,6 @@
 PREFERENCES:
 Gui,3: Destroy
-Gui,3: +owner2
+Gui,3: +owner
 Gui,3: Add, Tab,x5 y5 w306 h280 vTabs,General|Print|Stats ;|Import|Export Add these later
 IniRead,otfhotkey,texter.ini,Hotkey,OntheFly
 Gui,3: Add,Text,x10 y40,On-the-Fly shortcut:
