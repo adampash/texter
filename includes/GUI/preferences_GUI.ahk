@@ -45,6 +45,9 @@ Gui,3: Add,Text,x25 y100,Hours saved:             %time_saved% (assuming 400 cha
 Gui 2:+Disabled
 Gui,3: Show,,Texter Preferences
 GuiControl,3: Focus, Tabs
+Disable=1
+WinWaitClose, Texter Preferences
+Disable=
 Return
 
 SETTINGSOK:

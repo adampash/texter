@@ -31,11 +31,12 @@ Gosub,BuildActive
 FileRead, EnterKeys, %EnterCSV%
 FileRead, TabKeys, %TabCSV%
 FileRead, SpaceKeys, %SpaceCSV%
+FileRead, NoTrigKeys, %NoTrigCSV%
 ;Gosub,GetFileList
 ;Goto Start
-WinGet PrevWinID, ID, A
-SetTimer, MonitorWindows, 500
-
+; WinGet PrevWinID, ID, A
+; SetTimer, MonitorWindows, 500
+Starting=1
 Loop
 {
   ;wait for a matching hotstring
@@ -51,7 +52,7 @@ Loop
 		{
 			break
 		}
-	    Input, UserInput, L1 V, %EndKeys%
+	    Input, UserInput, L1 V M, %EndKeys%
 		;Tooltip, Input received, 10, 10
 	    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
 	    { ;any end key resets the search for a match
@@ -68,9 +69,10 @@ Loop
 	    }
 	  }			; end of inside loop
   }
-  if PossibleMatch in %NoTrigger%
-   { ;matched in triggerless list
-    Match := PossibleMatch
+  PossHexMatch := Hexify(PossibleMatch)
+  if PossHexMatch in %NoTrigKeys%
+  { ;matched in triggerless list	
+    Match := PossHexMatch
   }
   else
   { ;get a single character of input to look for triggers
@@ -78,18 +80,16 @@ Loop
     Input, UserInput, L1 M, %EndKeys%
 		;Tooltip, ErrorLevel= %ErrorLevel%, 10, 10
 	;msgbox %userinput%
-    if (SubStr(ErrorLevel, 1, 6) = "EndKey")
-    { ;trigger found
       AltState := GetKeyState("Alt", "P")
       CtrlState := GetKeyState("Ctrl", "P")
       ShiftState := GetKeyState("Shift", "P")
       LWinState := GetKeyState("LWin", "P")
       RWinState := GetKeyState("RWin", "P")
       WinState := LWinState || RWinState
+	  Modifier=
       if (AltState || CtrlState || ShiftState || WinState)
       {	
         PossibleMatch=
-		Modifier=
 		if AltState
 		{
 		  Modifier = !
@@ -107,21 +107,12 @@ Loop
 		  Modifier = %Modifier%#
 		}
       }
+	if (SubStr(ErrorLevel, 1, 6) = "EndKey")
+    { ;trigger found
       Trigger := SubStr(ErrorLevel, 8)
 	  if (Trigger = "Backspace")
 	  { ; trim possmatch so trigger still works if miskeyed
-	    if AltState
-		{
-		  Send, !{BS}
-		}
-		else if CtrlState
-        {
-          Send, ^{BS}
-        }
-		else
-		{
-		  Send, {BS}
-		}
+		Send %Modifier%{BS}
 	    StringTrimRight, PossibleMatch, PossibleMatch, 1
 		continue
 	  }
@@ -155,15 +146,17 @@ Loop
 			    Send, {Alt Up}
 			    break
 			  }
-			  PossibleMatch=
-			  Starting=1
 		    }
+			PossibleMatch=
+			Starting=1
           }
 		}
 		else if (AltState || CtrlState || ShiftState || WinState)
 		{
 		  ;msgbox not alone: %modifier%
 		  Send, %Modifier%`{%Trigger%`}
+		  PossibleMatch=
+		  Starting=1
 		}
         else
         {
@@ -186,9 +179,26 @@ Loop
   }
   else
   {
-    if UserInput = %CtrlC% ; this doesn't seem like the best fix, but Ctrl-C was not working correctly w/out
-	{								  ; all other modifiers + letters seem to be working fine
-	  SendInput, ^c
+  if (AltState && Modifier=)
+  {
+	Send, {Alt Down}%UserInput%
+	AltState := GetKeyState("Alt", "P")
+	Loop
+	{
+	  if AltState
+	  {
+		AltState := GetKeyState("Alt", "P")
+	  }
+	  else
+	  {
+		Send, {Alt Up}
+		break
+	  }
+	}
+  }
+	else if Modifier <>
+	{
+		SendInput,%Modifier%%UserInput%
 	}
 	;msgbox sending %userinput%
 	else
@@ -196,6 +206,7 @@ Loop
     PossibleMatch=%PossibleMatch%%UserInput%
     SendRaw, %UserInput%  ; SendRaw ensures special characters like #, !, {}, etc. are interpreted and sent correctly
 	Starting=
+	Modifier=
 	}
   }
 }
@@ -208,7 +219,7 @@ EXECUTE:
 WinGetActiveTitle,thisWindow ; this variable ensures that the active Window is receiving the text, activated before send
 ;; below added b/c SendMode Play appears not to be supported in Vista 
 ;EnableTriggers(false)
-if (A_OSVersion = "WIN_VISTA") or (Synergy = 1) ;;; need to implement this in the preferences - should work, though
+if (A_OSVersion = "WIN_VISTA") or (Synergy = 1)
 	SendMode Input
 else
 	SendMode Play   ; Set an option in Preferences to enable for use with Synergy - Use SendMode Input to work with Synergy
@@ -366,10 +377,11 @@ Send,{SC77}
 Return 
 
 ASSIGNVARS:
-Version = 0.5
+Version = 0.6
 EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
 TabCSV = %A_ScriptDir%\Active\bank\tab.csv
 SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
+NoTrigCSV = %A_ScriptDir%\Active\bank\notrig.csv
 ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
@@ -410,6 +422,7 @@ SpaceBox := GetValFromIni("Triggers","Space",0)
 ExSound := GetValFromIni("Preferences","ExSound",1)
 Synergy := GetValFromIni("Preferences","Synergy",0)
 AutoCorrect := GetValFromIni("Preferences","AutoCorrect",1)
+Default := GetValFromIni("Bundles","Default",1)
 
 
 
@@ -447,6 +460,8 @@ if disablehotkey <>
 #Include includes\GUI\preferences_GUI.ahk			; Preferences GUI and accept/cancel threads
 #Include includes\GUI\management_GUI.ahk		; Implementation of the hotstring management GUI
 #Include includes\GUI\textprompt_GUI.ahk			; GUI that prompts for text when %p operator is included
+#Include includes\GUI\disablechecks.ahk			; Keeps instant exclusive from tab, enter, and space keys (greys out others)
+
 
 ; Functions
 #Include includes\functions\disable.ahk  				; Disable/enable Texter... need to check if this is still in use (not sure it is)
@@ -467,7 +482,7 @@ if disablehotkey <>
 #Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
 #Include includes\functions\MonitorWindows.ahk 	; monitors active window and clears input when window switches
 
- #Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
+;#Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
 ; #Include includes\functions\autoclose.ahk			; Automatically closes bracketed puntuation, like parentheticals - not currently implemented
 
 EXIT: 

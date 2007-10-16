@@ -11,12 +11,15 @@ Loop, replacements\*.txt
 	FileRead, entertrig, bank\enter.csv
 	FileRead, tabtrig, bank\tab.csv
 	FileRead, spacetrig, bank\space.csv
+	FileRead, notrig, bank\notrig.csv
 	If hs in %entertrig%
 		trig = Enter
 	If hs in %tabtrig%
 		trig = %trig% Tab
 	If hs in %spacetrig%
 		trig = %trig% Space
+	If hs in %notrig%
+		trig = %trig% Instant
 	StringReplace, rp, rp, <,&lt;,All
 	StringReplace, rp, rp, >,&gt;,All
 	hs := DeHexify(hs)
@@ -36,12 +39,15 @@ Loop,bundles\*,2
 		FileRead, entertrig, bundles\%thisBundle%\bank\enter.csv
 		FileRead, tabtrig, bundles\%thisBundle%\bank\tab.csv
 		FileRead, spacetrig, bundles\%thisBundle%\bank\space.csv
+		FileRead, notrig, bundles\%thisBundle%\bank\notrig.csv
 		If hs in %entertrig%
 			trig = Enter
 		If hs in %tabtrig%
 			trig = %trig% Tab
 		If hs in %spacetrig%
 			trig = %trig% Space
+		If hs in %notrig%
+			trig = %trig% Instant
 		StringReplace, rp, rp, <,&lt;,All
 		StringReplace, rp, rp, >,&gt;,All
 		hs := DeHexify(hs)

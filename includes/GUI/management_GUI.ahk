@@ -22,16 +22,19 @@ GoSub,GetFileList
 Bundles =
 Loop,bundles\*,2
 {
-	Bundles = %Bundles%|%A_LoopFileName%
 	thisBundle = %A_LoopFileName%
+	if (thisBundle != "Autocorrect")
+	{
+		Bundles = %Bundles%|%A_LoopFileName%
 ;	Loop,bundles\%A_LoopFileName%\replacements\*.txt
 ;	{
 ;		thisReplacement:=Dehexify(A_LoopFileName)
 ;		thisBundle = %thisBundle%%thisReplacement%|
 ;	}
-	StringReplace, thisBundle, thisBundle, .txt,,All
-	StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
-	%A_LoopFileName% = %thisBundle%
+		StringReplace, thisBundle, thisBundle, .txt,,All
+		StringReplace, thisBundle, thisBundle, %A_LoopFileName%,,
+		%A_LoopFileName% = %thisBundle%
+	}
 }
 StringReplace, FileList, FileList, .txt,,All
 StringTrimLeft,Bundles,Bundles,1
@@ -48,9 +51,10 @@ Gui,2: Add, DropDownList, Section ys vTextOrScript, Text||Script
 Gui,2: Font, s12, Arial
 Gui,2: Add, Edit, r12 W460 xs vFullText
 Gui,2: Add, Text, xs,Trigger:
-Gui,2: Add, Checkbox, vEnterCbox yp xp+65, Enter
-Gui,2: Add, Checkbox, vTabCbox yp xp+65, Tab
-Gui,2: Add, Checkbox, vSpaceCbox yp xp+60, Space
+Gui,2: Add, Checkbox, gDisableChecks vEnterCbox yp xp+65, Enter
+Gui,2: Add, Checkbox, gDisableChecks vTabCbox yp xp+65, Tab
+Gui,2: Add, Checkbox, gDisableChecks vSpaceCbox yp xp+60, Space
+Gui,2: Add, Checkbox, gDisableChecks vNoTrigCbox yp xp+80, Instant
 Gui,2: Font, s8, Arial
 Gui,2: Add,Button, w80 GPButtonSave xs+375 yp, &Save
 IniRead,bundleCheck,texter.ini,Bundles,Default
@@ -58,9 +62,11 @@ Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+400 yp+
 Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+30,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
 Gui,2: Show, , Texter Management
+GuiControl,2: Focus, Choice
 Hotkey,IfWinActive, Texter Management
 Hotkey,!p,Preferences
-Hotkey,delete,Delete
+;Hotkey,delete,Delete
+Hotkey,^s,PButtonSave
 Hotkey,IfWinActive
 return
 
@@ -112,7 +118,7 @@ Gosub,BuildActive
 return
 
 ADD:
-EnableTriggers(false)
+;EnableTriggers(false)
 GoSub,Newkey
 IfWinExist,Add new hotstring...
 {
@@ -122,7 +128,7 @@ IfWinExist,Add new hotstring...
 GoSub,ListBundle
 StringReplace, CurrentBundle, CurrentBundle,|%RString%|,|%RString%||
 GuiControl,,Choice,|%CurrentBundle%
-EnableTriggers(true)
+;EnableTriggers(true)
 GoSub,ShowString
 return
 
@@ -165,6 +171,7 @@ else
 FileRead,enter,%ReadFrom%bank\enter.csv
 FileRead,tab,%ReadFrom%bank\tab.csv
 FileRead,space,%ReadFrom%bank\space.csv
+FileRead,notrig,%ReadFrom%bank\notrig.csv
 
 if ActiveChoice in %enter%
 {
@@ -184,6 +191,12 @@ if ActiveChoice in %space%
 }
 else
 	GuiControl,,SpaceCbox,0
+if ActiveChoice in %notrig%
+{
+	GuiControl,,NoTrigCbox,1
+}
+else
+	GuiControl,,NoTrigCbox,0
 FileRead, Text, %ReadFrom%replacements\%ActiveChoice%.txt
 IfInString,Text,::scr::
 {
@@ -205,7 +218,7 @@ If Choice <>
 		SaveToDir = Bundles\%CurrentBundle%\
 	else
 		SaveToDir = 
-	PSaveSuccessful := SaveHotstring(Choice, FullText, IsScript, SaveToDir, SpaceCbox, TabCbox, EnterCbox)
+	PSaveSuccessful := SaveHotstring(Choice, FullText, IsScript, SaveToDir, SpaceCbox, TabCbox, EnterCbox, NoTrigCbox)
 }
 else
 {

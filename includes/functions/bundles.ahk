@@ -145,6 +145,7 @@ if ErrorLevel = 0
 	Gui,8: Add, Checkbox, vEnterCbox x30, Enter
 	Gui,8: Add, Checkbox, vTabCbox yp xp+65, Tab
 	Gui,8: Add, Checkbox, vSpaceCbox yp xp+60, Space
+	Gui,8: Add, Checkbox, vNoTrigCbox yp xp+60, Instant
 	Gui,8: Add,Button, x180 Default w80 GCreateBank,&OK
 	Gui, 8: Show,,Set default triggers
 }
@@ -159,6 +160,8 @@ if TabCbox = 1
 	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\tab.csv
 if SpaceCbox = 1
 	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\space.csv
+if NoTrigCbox = 1
+	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\notrig.csv
 MsgBox,4,Enable %BundleName% bundle?,Would you like to enable the %BundleName% bundle?
 IfMsgBox,Yes
 {

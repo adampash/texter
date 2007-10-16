@@ -1,4 +1,4 @@
-#IfWinActive,Texter Management
+#IfWinActive, ahk_class AutoHotkeyGUI
 Ins & LWin::
 Ins & Rwin::
 SendRaw,#

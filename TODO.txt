@@ -11,9 +11,9 @@ Features/fixes for 0.6 release:
 	x Set focus on Preferences so On-the-fly shortcut doesn't immediately blank out to "None"
 	
 - Features:
-	- Define custom hotkey
+	- Define custom hotkey or implement "no trigger" replacements
 	- Integrate AHK autocorrect script
-		(Unless Dustin's new trigger method works, consider compiling autocorrect to .exe, storing it in resources, hiding from systray, and running separately when enabled, killing when disabled.  The script doesn't play nice with the SC77 special char trigger)
+	- Can select bundle when creating new on-the-fly hotstring
 	x Disable via global hotkey?
 
 Features/fixes for 0.5 release:
