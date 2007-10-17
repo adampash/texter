@@ -40,7 +40,7 @@ Starting=1
 Loop
 {
   ;wait for a matching hotstring
-  if (Disable = 1 || CurrWinClass = "AutoHotkeyGUI")
+  if (Disable = 1)
   {
 		continue
   }
@@ -48,7 +48,7 @@ Loop
   {
 	  Loop
 	  { ;grab input one character at a time looking for a match
-		if (Disable = 1 || CurrWinClass = "AutoHotkeyGUI")
+		if (Disable = 1)
 		{
 			break
 		}
@@ -73,6 +73,20 @@ Loop
   if PossHexMatch in %NoTrigKeys%
   { ;matched in triggerless list	
     Match := PossHexMatch
+	if GetKeyState("Shift", "P") ; the following loop prevents the shift key from being stuck, which happens if it's released while the execute thread is in progress
+	{
+		Loop
+		{
+			if GetKeyState("Shift", "P")
+			{
+				continue
+			}
+			else
+			{
+				break
+			}
+		}
+	}
   }
   else
   { ;get a single character of input to look for triggers
@@ -87,16 +101,17 @@ Loop
       RWinState := GetKeyState("RWin", "P")
       WinState := LWinState || RWinState
 	  Modifier=
-      if (AltState || CtrlState || ShiftState || WinState)
+      if (AltState || CtrlState || WinState || ShiftState)
       {	
-        PossibleMatch=
 		if AltState
 		{
 		  Modifier = !
+		  PossibleMatch=
 		}
 		if CtrlState
 		{
 		  Modifier = %Modifier%^
+		  PossibleMatch=
 		}
 		if ShiftState
 		{
@@ -105,6 +120,7 @@ Loop
 		if WinState
 		{
 		  Modifier = %Modifier%#
+		  PossibleMatch=
 		}
       }
 	if (SubStr(ErrorLevel, 1, 6) = "EndKey")
@@ -116,12 +132,9 @@ Loop
 	    StringTrimRight, PossibleMatch, PossibleMatch, 1
 		continue
 	  }
-	  if (Trigger != "not found")			; the special trigger key vkFF returns "not found" as the trigger; this check avoids it
-	  {
-	      Bank = %Trigger%Keys
-	      Bank := %Bank%
-		  PossHexMatch := Hexify(PossibleMatch)	
-	  }
+	  Bank = %Trigger%Keys
+	  Bank := %Bank%
+	  PossHexMatch := Hexify(PossibleMatch)	
       if PossHexMatch in %Bank%
       { ;hotstring/trigger match
         Match := PossHexMatch
@@ -149,23 +162,28 @@ Loop
 		    }
 			PossibleMatch=
 			Starting=1
+			continue
           }
 		}
-		else if (AltState || CtrlState || ShiftState || WinState)
+		else if (AltState || CtrlState || WinState || ShiftState)
 		{
 		  ;msgbox not alone: %modifier%
 		  Send, %Modifier%`{%Trigger%`}
 		  PossibleMatch=
 		  Starting=1
+		  continue
 		}
         else
         {
 		  ;MsgBox %Trigger%
           Send, `{%Trigger%`}
+		  ;msgbox sent trigger
+		  PossibleMatch=
+		  Starting=1
+		  continue
         }
         ;MsgBox, Trigger=%Trigger%
       }
-      PossibleMatch=
     }
   }
   if Match<>
@@ -176,39 +194,52 @@ Loop
 	PossHexMatch=
     Match=
 	Starting=1
+	continue
   }
   else
   {
-  if (AltState && Modifier=)
-  {
-	Send, {Alt Down}%UserInput%
-	AltState := GetKeyState("Alt", "P")
-	Loop
-	{
 	  if AltState
 	  {
+		Send, {Alt Down}%UserInput%
 		AltState := GetKeyState("Alt", "P")
+		Loop
+		{
+		  if AltState
+		  {
+			AltState := GetKeyState("Alt", "P")
+		  }
+		  else
+		  {
+			Send, {Alt Up}
+			break
+		  }
+		}
 	  }
-	  else
-	  {
-		Send, {Alt Up}
-		break
+	  else if UserInput = %CtrlC% ; this doesn't seem like the best fix, but Ctrl-C was not working correctly w/out
+	  {								  ; all other modifiers + letters seem to be working fine
+		SendInput, ^c
+		PossibleMatch=
+		Starting=1
+		;msgbox boom hi there
+		continue
 	  }
+;	  else if (Modifier <> && !ShiftState) ;is this even doing anything anymore?
+;	  {
+;		SendInput,%Modifier%%UserInput%
+;		msgbox sending
+;		PossibleMatch=
+;		Starting=1
+;		continue
+;	   }
+		;msgbox sending %userinput%
+	    PossibleMatch=%PossibleMatch%%UserInput%
+		;Tooltip, PossibleMatch= %PossibleMatch%
+	    SendRaw, %UserInput%  ; SendRaw ensures special characters like #, !, {}, etc. are interpreted and sent correctly
+		Starting=
+		Modifier=
+	  
 	}
-  }
-	else if Modifier <>
-	{
-		SendInput,%Modifier%%UserInput%
-	}
-	;msgbox sending %userinput%
-	else
-	{
-    PossibleMatch=%PossibleMatch%%UserInput%
-    SendRaw, %UserInput%  ; SendRaw ensures special characters like #, !, {}, etc. are interpreted and sent correctly
-	Starting=
-	Modifier=
-	}
-  }
+ 
 }
 return
 
