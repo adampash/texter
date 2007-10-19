@@ -1,3 +1,12 @@
+- Tools / Preferences / Run Texter at Startup checkbox doesn't stay checked if you turn it on.
+- bundle export doesn't have to use hex... also, maybe get rid of file structure business?
+
+
+- Importing Default bundle fix
+- changing on-the-fly hotkey kills old shortcut
+- Stats error fixed when no replacements have yet been made
+- Added option to use bundle triggers of the exported bundle so user can keep all exported trigger settings when importing a new bundle.
+
 Features/fixes for 0.6 release:
 - Bugs:
 	x Fix printable cheatsheet

@@ -34,8 +34,16 @@ Gui,3: Add,Text,xp+160 y50 w125 Wrap,Click the big button to export a printable 
 Gui,3: Tab,3
 Gui,3: Add,Text,x10 y40,Your Texter stats:
 IniRead,expanded,texter.ini,Stats,Expanded
+if expanded = ERROR
+{
+	expanded = 0
+}
 Gui,3: Add,Text,x25 y60,Snippets expanded:   %expanded% 
 IniRead,chars_saved,texter.ini,Stats,Characters
+if chars_saved = ERROR
+{
+	chars_saved = 0
+}
 Gui,3: Add,Text,x25 y80,Characters saved:     %chars_saved%
 SetFormat,FLOAT,0.2
 time_saved := chars_saved/24000
@@ -54,6 +62,12 @@ SETTINGSOK:
 Gui,3: Submit, NoHide
 If (sotfhotkey != otfhotkey)
 {
+    if otfhotkey <> ; disable old hotkey
+	{
+		Hotkey,IfWinNotActive,Texter Preferences
+		Hotkey, %otfhotkey%,Off
+		Hotkey,IfWinActive
+	}
 	otfhotkey:=sotfhotkey
 	If otfhotkey<>
 	{

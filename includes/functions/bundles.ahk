@@ -81,6 +81,15 @@ IfMsgBox, Yes
 		FileAppend,%A_LoopFileName%`n,Texter Exports\%CurrentBundle%.texter
 		FileAppend,%replacement%`n,Texter Exports\%CurrentBundle%.texter
 	}
+	FileRead,EnterTrigs,%BundleDir%bank\enter.csv
+	FileRead,TabTrigs,%BundleDir%bank\tab.csv
+	FileRead,SpaceTrigs,%BundleDir%bank\space.csv
+	FileRead,NoTrigs,%BundleDir%bank\notrig.csv
+	FileAppend,¢Triggers¢`n,Texter Exports\%CurrentBundle%.texter
+	FileAppend,%EnterTrigs%`n,Texter Exports\%CurrentBundle%.texter
+	FileAppend,%TabTrigs%`n,Texter Exports\%CurrentBundle%.texter
+	FileAppend,%SpaceTrigs%`n,Texter Exports\%CurrentBundle%.texter
+	FileAppend,%NoTrigs%`n,Texter Exports\%CurrentBundle%.texter
 	MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nWould you like to see the %CurrentBundle% bundle?
 IfMsgBox, Yes
 	Run,Texter Exports\
@@ -94,7 +103,7 @@ if ErrorLevel = 0
 {
 	FileReadLine, BundleName, %ImportBundle%, 1
 	InputBox, BundleName, Bundle Name, What would you like to call this bundle?,,,,,,,,%BundleName%
-	BundleDir = bundles\%BundleName%
+	BundleDir = bundles\%BundleName%\
 	IfExist bundles\%BundleName%
 	{
 		MsgBox,4,%BundleName% bundle already installed,%BundleName% bundle already installed.`nWould you like to overwrite previous %BundleName% bundle?
@@ -109,14 +118,20 @@ if ErrorLevel = 0
 	{
 	  MsgBox,4,%BundleName% bundle already exitsts,%BundleName% bundle already installed.`nWould you like to overwrite previous %BundleName% bundle?
 	  IfMsgBox, No
-	  BundleDir= 
 	  	return
+	  else
+	  {
+   	    BundleDir=
+		DefaultDir=1
+	  }
 	}
-	if BundleDir <>
+	if BundleDir <> || DefaultDir = 1
 	{
+	  FileRemoveDir,%BundleDir%replacements,1
+	  FileRemoveDir,%BundleDir%bank,1
 	  FileCreateDir,%BundleDir%
-	  FileCreateDir,%BundleDir%\replacements
-	  FileCreateDir,%BundleDir%\bank
+	  FileCreateDir,%BundleDir%replacements
+	  FileCreateDir,%BundleDir%bank
 	}
 	LineSwitch := 0
 	Loop, Read, %ImportBundle%
@@ -129,6 +144,11 @@ if ErrorLevel = 0
 	  {
 	    LineSwitch := 1 - LineSwitch
 		FileName = %A_LoopReadLine%
+		if FileName = ¢Triggers¢
+		{
+			readDefaultTriggers(ImportBundle, A_Index)
+			break
+		}
 		StringReplace, Hotstring, FileName, .txt
 		bundleCollection = %Hotstring%,%bundleCollection%
 	  }
@@ -136,32 +156,58 @@ if ErrorLevel = 0
 	  {
 	    LineSwitch := 1 - LineSwitch
 		StringReplace,Replacement, A_LoopReadLine,`%bundlebreak,`r`n,All
-		FileAppend, %Replacement%, %BundleDir%\replacements\%FileName%
+		FileAppend, %Replacement%, %BundleDir%replacements\%FileName%
 		FileName=
 		Replacement=
 		}
 	}
 	Gui, 8: Add, Text, Section x10 y10,What triggers would you like to use with the %BundleName% bundle?
-	Gui,8: Add, Checkbox, vEnterCbox x30, Enter
+	Gui,8: Add, Checkbox, vDefaultsCbox x30, Defaults
+	Gui,8: Add, Checkbox, vEnterCbox xp+70, Enter
 	Gui,8: Add, Checkbox, vTabCbox yp xp+65, Tab
 	Gui,8: Add, Checkbox, vSpaceCbox yp xp+60, Space
 	Gui,8: Add, Checkbox, vNoTrigCbox yp xp+60, Instant
-	Gui,8: Add,Button, x180 Default w80 GCreateBank,&OK
+	Gui,8: Add,Button, x250 Default w80 GCreateBank,&OK
 	Gui, 8: Show,,Set default triggers
 }
 return
+
+readDefaultTriggers(fromFile, startingAt)
+{
+	global EnterTrigs
+	global TabTrigs
+	global SpaceTrigs
+	global NoTrigs
+	enterLine:=startingAt+1
+	tabLine:=startingAt+2
+	spaceLine:=startingAt+3
+	notrigLine:=startingAt+4
+	FileReadLine,EnterTrigs,%fromFile%,%enterLine%
+	FileReadLine,TabTrigs,%fromFile%,%tabLine%
+	FileReadLine,SpaceTrigs,%fromFile%,%spaceLine%
+	FileReadLine,NoTrigs,%fromFile%,%notrigLine%
+	return
+}
+
 
 CreateBank:
 Gui,8: Submit
 Gui,8: Destroy
 if EnterCbox = 1
-	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\enter.csv
+	FileAppend,%bundleCollection%,%BundleDir%bank\enter.csv
 if TabCbox = 1
-	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\tab.csv
+	FileAppend,%bundleCollection%,%BundleDir%bank\tab.csv
 if SpaceCbox = 1
-	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\space.csv
+	FileAppend,%bundleCollection%,%BundleDir%bank\space.csv
 if NoTrigCbox = 1
-	FileAppend,%bundleCollection%,bundles\%BundleName%\bank\notrig.csv
+	FileAppend,%bundleCollection%,%BundleDir%bank\notrig.csv
+if DefaultsCbox = 1
+{
+	FileAppend,%EnterTrigs%,%BundleDir%bank\enter.csv
+	FileAppend,%TabTrigs%,%BundleDir%bank\tab.csv
+	FileAppend,%SpaceTrigs%,%BundleDir%bank\space.csv
+	FileAppend,%NoTrigs%,%BundleDir%bank\notrig.csv
+}
 MsgBox,4,Enable %BundleName% bundle?,Would you like to enable the %BundleName% bundle?
 IfMsgBox,Yes
 {
@@ -181,4 +227,8 @@ Loop,bundles\*,2
 GuiControl,2:,BundleTabs,|Default|%Bundles%
 CurrentBundle = %BundleName%
 Gosub,ListBundle
+if BundleName = Default
+{
+	Gosub,Manage
+}
 return
