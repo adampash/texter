@@ -16,9 +16,9 @@ SetKeyDelay,-1
 SetWinDelay,0 
 ;Gosub,UpdateCheck
 Gosub,ASSIGNVARS
+Gosub,RESOURCES
 Gosub,READINI
 ;EnableTriggers(true)
-Gosub,RESOURCES
 Gosub,TRAYMENU
 Gosub,BuildActive
 
@@ -32,6 +32,7 @@ FileRead, EnterKeys, %EnterCSV%
 FileRead, TabKeys, %TabCSV%
 FileRead, SpaceKeys, %SpaceCSV%
 FileRead, NoTrigKeys, %NoTrigCSV%
+FileRead, AutocorrectKeys, %AutocorrectCSV%
 ;Gosub,GetFileList
 ;Goto Start
 ; WinGet PrevWinID, ID, A
@@ -70,9 +71,46 @@ Loop
 	  }			; end of inside loop
   }
   PossHexMatch := Hexify(PossibleMatch)
-  if PossHexMatch in %NoTrigKeys%
-  { ;matched in triggerless list	
+  ;PHMPipe = |%PossHexMatch%|
+  if AutoCorrect = 1
+  {
+	  if PossHexMatch in %AutocorrectKeys%
+	  {
+		AutoMatch = 1
+	  }
+	  else
+	  {
+		AutoMatch=
+	  }
+  }
+  if (Autocorrect = 1 and AutoMatch = 1)
+  {
+		;msgbox %autocorrectkeys% 
+	  ;if PossHexMatch in %AutocorrectKeys%
+	  ;{ ;matched in triggerless list	
+		ReadFrom = %A_ScriptDir%\Active\Autocorrect\replacements
+	    Match := PossHexMatch
+		;msgbox %match%
+		if GetKeyState("Shift", "P") ; the following loop prevents the shift key from being stuck, which happens if it's released while the execute thread is in progress
+		{
+			Loop
+			{
+				if GetKeyState("Shift", "P")
+				{
+					continue
+				}
+				else
+				{
+					break
+				}
+			}
+		}
+	  ;}
+	}
+  else if PossHexMatch in %NoTrigKeys%
+  {
     Match := PossHexMatch
+	ReadFrom = %A_ScriptDir%\Active\replacements
 	if GetKeyState("Shift", "P") ; the following loop prevents the shift key from being stuck, which happens if it's released while the execute thread is in progress
 	{
 		Loop
@@ -137,6 +175,7 @@ Loop
 	  PossHexMatch := Hexify(PossibleMatch)	
       if PossHexMatch in %Bank%
       { ;hotstring/trigger match
+		ReadFrom = %A_ScriptDir%\Active\replacements
         Match := PossHexMatch
       }
       else
@@ -188,7 +227,7 @@ Loop
   }
   if Match<>
   {
-    ;MsgBox, %Match%
+    ;msgbox %possiblematch%
 	GoSub, EXECUTE
     PossibleMatch=
 	PossHexMatch=
@@ -260,7 +299,7 @@ ReturnTo := 0
 hexInput:=Dehexify(Match)
 StringLen,BSlength,hexInput
 Send, {BS %BSlength%}
-FileRead, ReplacementText, %A_ScriptDir%\Active\replacements\%Match%.txt
+FileRead, ReplacementText, %ReadFrom%\%Match%.txt
 StringLen,ClipLength,ReplacementText
 
 IfInString,ReplacementText,::scr::
@@ -413,30 +452,18 @@ EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
 TabCSV = %A_ScriptDir%\Active\bank\tab.csv
 SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
 NoTrigCSV = %A_ScriptDir%\Active\bank\notrig.csv
+AutocorrectCSV = %A_ScriptDir%\Active\Autocorrect\autocorrect.csv
 ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
 StyleCSS = %A_ScriptDir%\resources\style.css
+Throbber =  %A_ScriptDir%\resources\throbber.gif
 SpecialKey = vkFF
 EndKeys={Enter}{Esc} {Tab}{Right}{Left}{Up}{Down}{Del}{BS}{Home}{End}{PgUp}{PgDn}{%SpecialKey%}{F1}{F2}{F3}{F4}{F5}{F6}{F7}{F8}{F9}{F10}{F11}{F12}
 Disable = 0
 return
 
 READINI:
-IfNotExist bank
-	FileCreateDir, bank
-IfNotExist replacements
-	FileCreateDir, replacements
-IfNotExist resources
-	FileCreateDir, resources
-IfNotExist bundles
-	FileCreateDir, bundles
-IfNotExist Active
-{
-	FileCreateDir, Active
-	FileCreateDir, Active\replacements
-	FileCreateDir, Active\bank
-}
 IniWrite,%Version%,texter.ini,Preferences,Version
 IniWrite,0,texter.ini,Settings,Disable
 cancel := GetValFromIni("Cancel","Keys","{Escape}") ;keys to stop completion, remember {} 
@@ -452,8 +479,9 @@ TabBox := GetValFromIni("Triggers","Tab",0)
 SpaceBox := GetValFromIni("Triggers","Space",0)
 ExSound := GetValFromIni("Preferences","ExSound",1)
 Synergy := GetValFromIni("Preferences","Synergy",0)
-AutoCorrect := GetValFromIni("Preferences","AutoCorrect",1)
+Autocorrect := GetValFromIni("Preferences","AutoCorrect",1)
 Default := GetValFromIni("Bundles","Default",1)
+OnStartup := GetValFromIni(Settings, Startup, 0)
 
 
 
@@ -512,6 +540,8 @@ if disablehotkey <>
 #Include includes\functions\hexify.ahk					; Translates back and forth between hex values for replacements
 #Include includes\functions\InsSpecKeys.ahk		; Insert special characters in Texter script mode by pressing insert and then the special key
 #Include includes\functions\MonitorWindows.ahk 	; monitors active window and clears input when window switches
+#include includes\functions\renameHotstring.ahk	; rename hotstrings in the Texter Management GUI via the right-click context menu
+#include includes\functions\InstallAutocorrect.ahk	; sets up autocorrect folder when Texter is first run
 
 ;#Include includes\functions\autocorrect.ahk			; Spelling autocorrect--may implement in 0.6
 ; #Include includes\functions\autoclose.ahk			; Automatically closes bracketed puntuation, like parentheticals - not currently implemented

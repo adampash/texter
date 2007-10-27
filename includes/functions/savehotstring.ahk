@@ -66,3 +66,24 @@ global NoTrigKeys
 	GoSub,BuildActive
 	return successful
 }
+
+DeleteHotstring(Hotstring, Bundle)
+{
+	Hotstring:=Hexify(Hotstring)
+	if (Bundle != "") and (Bundle != "Default")
+	RemoveFromDir = Bundles\%Bundle%\
+	else
+		RemoveFromDir = 
+	FileDelete,%A_ScriptDir%\%RemoveFromDir%replacements\%Hotstring%.txt
+	DelFromBank(Hotstring, RemoveFromDir, "enter")
+	DelFromBank(Hotstring, RemoveFromDir, "tab")
+	DelFromBank(Hotstring, RemoveFromDir, "space")
+	DelFromBank(Hotstring, RemoveFromDir, "notrig")
+	GuiControl,2:,Choice,|%Bundle%
+	GuiControl,2:,FullText,
+	GuiControl,2:,EnterCbox,0
+	GuiControl,2:,TabCbox,0
+	GuiControl,2:,SpaceCbox,0
+	Gosub, BuildActive
+	return
+}

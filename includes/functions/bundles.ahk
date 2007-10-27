@@ -56,7 +56,8 @@ IfMsgBox, Yes
 	}
 	GuiControl,,BundleTabs,|Default|%Bundles%
 	Gosub,GetFileList
-	GuiControl,,Choice,%FileList%
+	GuiControl,2:,Choice,|
+	GuiControl,2:,Choice,%FileList%
 }
 return
 
@@ -78,7 +79,8 @@ IfMsgBox, Yes
 		FileRead,replacement,%A_LoopFileFullPath%
 		IfInString,replacement,`r`n
 			StringReplace,replacement,replacement,`r`n,`%bundlebreak,All
-		FileAppend,%A_LoopFileName%`n,Texter Exports\%CurrentBundle%.texter
+		Hotstring := DeHexify(A_LoopFileName)
+		FileAppend,%Hotstring%`n,Texter Exports\%CurrentBundle%.texter
 		FileAppend,%replacement%`n,Texter Exports\%CurrentBundle%.texter
 	}
 	FileRead,EnterTrigs,%BundleDir%bank\enter.csv
@@ -90,7 +92,7 @@ IfMsgBox, Yes
 	FileAppend,%TabTrigs%`n,Texter Exports\%CurrentBundle%.texter
 	FileAppend,%SpaceTrigs%`n,Texter Exports\%CurrentBundle%.texter
 	FileAppend,%NoTrigs%`n,Texter Exports\%CurrentBundle%.texter
-	MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nWould you like to see the %CurrentBundle% bundle?
+	MsgBox,4,Your bundle was successfully created!,Congratulations, your bundle was successfully exported!`nYou can now share your bundle with the world by sending them the %CurrentBundle%.texter file.`nThey can add it to Texter through the import feature. `n`nYour export can be found at %A_WorkingDir%\Texter Export.`n`nWould you like to see the %CurrentBundle% bundle?
 IfMsgBox, Yes
 	Run,Texter Exports\
 }
@@ -143,12 +145,12 @@ if ErrorLevel = 0
 	  if (LineSwitch = 0)
 	  {
 	    LineSwitch := 1 - LineSwitch
-		FileName = %A_LoopReadLine%
-		if FileName = ¢Triggers¢
+		if A_LoopReadLine = ¢Triggers¢
 		{
 			readDefaultTriggers(ImportBundle, A_Index)
 			break
 		}
+		FileName := Hexify(A_LoopReadLine)
 		StringReplace, Hotstring, FileName, .txt
 		bundleCollection = %Hotstring%,%bundleCollection%
 	  }
@@ -156,7 +158,7 @@ if ErrorLevel = 0
 	  {
 	    LineSwitch := 1 - LineSwitch
 		StringReplace,Replacement, A_LoopReadLine,`%bundlebreak,`r`n,All
-		FileAppend, %Replacement%, %BundleDir%replacements\%FileName%
+		FileAppend, %Replacement%, %BundleDir%replacements\%FileName%.txt
 		FileName=
 		Replacement=
 		}

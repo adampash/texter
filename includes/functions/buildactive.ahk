@@ -60,5 +60,17 @@ Loop, Active\replacements\*.txt
 	This_HotString := Dehexify(A_LoopFileName)
 	HotStrings = %HotStrings%%This_HotString%|
 }
+;Loop, Active\Autocorrect\replacements\*.txt
+;{
+	;ActiveList = %ActiveList%%A_LoopFileName%|
+;	This_HotString := Dehexify(A_LoopFileName)
+;	ACHotStrings = %ACHotStrings%%This_HotString%|
+;}
+;FileAppend, %ACHotstrings%,pipelist.txt
+if Autocorrect = 1
+{ ; append autocorrect list to hotstrings
+	FileRead, AutocorrectHotstrings,%A_WorkingDir%\Active\Autocorrect\pipelist.txt
+	HotStrings = %HotStrings%%AutocorrectHotstrings%
+}
 StringReplace, ActiveList, ActiveList, .txt,,All
 return

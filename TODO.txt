@@ -1,7 +1,16 @@
-- Tools / Preferences / Run Texter at Startup checkbox doesn't stay checked if you turn it on.
-- bundle export doesn't have to use hex... also, maybe get rid of file structure business?
+- Move back to start from second loop if the new possmatch word doesn't match anything
+- only allow default to be chosen in import
+- find out and remove partial autocorrects... remove noth (replaces with north when typing nothing) - clas renames to class
+- Add autocorrect files with a fileinstall
 
-
+- Implemented Autocorrect
+- Gui controls are disabled when no hotstring is selected
+- Changed Save button in Texter Management GUI to Save Hotstring to make it more clear
+- Cosmetic fix for General tab of preferences
+- OK and Cancel buttons no longer missing from print and stats tabs of Preferences GUI
+- bundle export/import now aren't written in hex so they're easier to programmatically create
+- Tools / Preferences / Run Texter at Startup checkbox doesn't stay checked if you turn it on. (fixed)
+- Added ability to rename hotstring
 - Importing Default bundle fix
 - changing on-the-fly hotkey kills old shortcut
 - Stats error fixed when no replacements have yet been made
