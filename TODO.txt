@@ -1,8 +1,8 @@
-- Move back to start from second loop if the new possmatch word doesn't match anything
-- only allow default to be chosen in import
+about the best in the business
+- figure out why autocorr bundle isn't working
 - find out and remove partial autocorrects... remove noth (replaces with north when typing nothing) - clas renames to class
-- Add autocorrect files with a fileinstall
 
+- NumpadEnter Key and escape key work with %p
 - Implemented Autocorrect
 - Gui controls are disabled when no hotstring is selected
 - Changed Save button in Texter Management GUI to Save Hotstring to make it more clear

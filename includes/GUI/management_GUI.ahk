@@ -90,7 +90,7 @@ if A_GuiControl = BundleTabs
 Gosub, DisableControls
 IniRead,bundleCheck,texter.ini,Bundles,%CurrentBundle%
 ActiveBundle = %CurrentBundle%
-;GuiControl,2:,Choice,|
+GuiControl,2:,Choice,|
 Loop,bundles\*,2
 {
 	Bundles = %Bundles%|%A_LoopFileName%

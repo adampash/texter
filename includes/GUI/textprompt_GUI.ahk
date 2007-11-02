@@ -7,7 +7,9 @@ textPrompt(thisText) {
 	Gui,7: Show,auto,Enter desired text
 	Hotkey,IfWinActive,Enter desired text
 	Hotkey,Enter,SubmitPrompt
+	Hotkey,NumpadEnter,SubmitPrompt
 	;Hotkey,Space,
+	Hotkey,Escape,ExitPrompt
 	WinWaitClose,Enter desired text
 }
 return
@@ -15,5 +17,11 @@ return
 SubmitPrompt:
 Gui, 7: Submit
 Gui, 7: Destroy
+escapePrompt = 
 StringReplace,ReplacementText,ReplacementText,`%p,%promptText%
+return
+
+ExitPrompt:
+Gui, 7: Destroy
+escapePrompt = 1
 return

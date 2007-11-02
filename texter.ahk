@@ -74,7 +74,7 @@ Loop
   ;PHMPipe = |%PossHexMatch%|
   if AutoCorrect = 1
   {
-	  if PossHexMatch in %AutocorrectKeys%
+	  IfInString, AutocorrectKeys, |%PossibleMatch%|
 	  {
 		AutoMatch = 1
 	  }
@@ -89,7 +89,7 @@ Loop
 	  ;if PossHexMatch in %AutocorrectKeys%
 	  ;{ ;matched in triggerless list	
 		ReadFrom = %A_ScriptDir%\Active\Autocorrect\replacements
-	    Match := PossHexMatch
+	    Match := Hexify(PossibleMatch)
 		;msgbox %match%
 		if GetKeyState("Shift", "P") ; the following loop prevents the shift key from being stuck, which happens if it's released while the execute thread is in progress
 		{
@@ -300,6 +300,7 @@ hexInput:=Dehexify(Match)
 StringLen,BSlength,hexInput
 Send, {BS %BSlength%}
 FileRead, ReplacementText, %ReadFrom%\%Match%.txt
+;msgbox %hexinput%
 StringLen,ClipLength,ReplacementText
 
 IfInString,ReplacementText,::scr::
@@ -310,6 +311,10 @@ IfInString,ReplacementText,::scr::
 	IfInString,ReplacementText,`%p
 	{
 		textPrompt(ReplacementText)
+		if escapePrompt = 1
+		{
+			Exit
+		}
 	}
 	IfInString,ReplacementText,`%s
 	{
@@ -368,6 +373,10 @@ else
 	IfInString,ReplacementText,`%p
 	{
 		textPrompt(ReplacementText)
+		if escapePrompt = 1
+		{
+			return
+		}		
 	}
 	IfInString,ReplacementText,`%|
 	{
@@ -452,7 +461,7 @@ EnterCSV = %A_ScriptDir%\Active\bank\enter.csv
 TabCSV = %A_ScriptDir%\Active\bank\tab.csv
 SpaceCSV = %A_ScriptDir%\Active\bank\space.csv
 NoTrigCSV = %A_ScriptDir%\Active\bank\notrig.csv
-AutocorrectCSV = %A_ScriptDir%\Active\Autocorrect\autocorrect.csv
+AutocorrectCSV = %A_ScriptDir%\Active\Autocorrect\pipelist.txt
 ReplaceWAV = %A_ScriptDir%\resources\replace.wav
 TexterPNG = %A_ScriptDir%\resources\texter.png
 TexterICO = %A_ScriptDir%\resources\texter.ico
