@@ -70,7 +70,7 @@ Gui,2: Add, Checkbox, gDisableChecks vNoTrigCbox yp xp+80, Instant
 Gui,2: Font, s8, Arial
 Gui,2: Add,Button, w80 vSaveButton gPButtonSave xs+375 yp, &Save Hotstring
 IniRead,bundleCheck,texter.ini,Bundles,Default
-Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+400 yp+50,Enabled
+Gui,2: Add, Checkbox, Checked%bundleCheck% vbundleCheck gToggleBundle xs+360 yp+50,Bundle Enabled
 Gui,2: Add, Button, w80 Default GPButtonOK xs+290 yp+30,&OK
 Gui,2: Add, Button, w80 xp+90 GPButtonCancel, &Cancel
 Gui,2: Show, , Texter Management

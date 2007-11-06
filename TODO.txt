@@ -1,21 +1,3 @@
-about the best in the business
-- figure out why autocorr bundle isn't working
-- find out and remove partial autocorrects... remove noth (replaces with north when typing nothing) - clas renames to class
-
-- NumpadEnter Key and escape key work with %p
-- Implemented Autocorrect
-- Gui controls are disabled when no hotstring is selected
-- Changed Save button in Texter Management GUI to Save Hotstring to make it more clear
-- Cosmetic fix for General tab of preferences
-- OK and Cancel buttons no longer missing from print and stats tabs of Preferences GUI
-- bundle export/import now aren't written in hex so they're easier to programmatically create
-- Tools / Preferences / Run Texter at Startup checkbox doesn't stay checked if you turn it on. (fixed)
-- Added ability to rename hotstring
-- Importing Default bundle fix
-- changing on-the-fly hotkey kills old shortcut
-- Stats error fixed when no replacements have yet been made
-- Added option to use bundle triggers of the exported bundle so user can keep all exported trigger settings when importing a new bundle.
-
 Features/fixes for 0.6 release:
 - Bugs:
 	x Fix printable cheatsheet
@@ -33,6 +15,20 @@ Features/fixes for 0.6 release:
 	- Integrate AHK autocorrect script
 	- Can select bundle when creating new on-the-fly hotstring
 	x Disable via global hotkey?
+	- NumpadEnter Key and escape key work with %p
+	- Implemented Autocorrect
+	- Gui controls are disabled when no hotstring is selected
+	- Changed Save button in Texter Management GUI to Save Hotstring to make it more clear
+	- Cosmetic fix for General tab of preferences
+	- OK and Cancel buttons no longer missing from print and stats tabs of Preferences GUI
+	- bundle export/import now aren't written in hex so they're easier to programmatically create
+	- Tools / Preferences / Run Texter at Startup checkbox doesn't stay checked if you turn it on. (fixed)
+	- Added ability to rename hotstring
+	- Importing Default bundle fix
+	- changing on-the-fly hotkey kills old shortcut
+	- Stats error fixed when no replacements have yet been made
+	- Added option to use bundle triggers of the exported bundle so user can keep all exported trigger settings when importing a new bundle.
+
 
 Features/fixes for 0.5 release:
 x Bundles
