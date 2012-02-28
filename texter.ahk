@@ -365,6 +365,11 @@ else
 		FormatTime, SDate, , ShortDate
 		StringReplace, ReplacementText, ReplacementText, `%ds, %SDate%, All
 	}
+	IfInString,ReplacementText,`%dm
+	{
+		FormatTime, XDate, , MM/dd/yyyy
+		StringReplace, ReplacementText, ReplacementText, `%dm, %XDate%, All
+	}
 	IfInString,ReplacementText,`%dl
 	{
 		FormatTime, LDate, , LongDate
