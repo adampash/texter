@@ -370,6 +370,11 @@ else
 		FormatTime, XDate, , MM/dd/yyyy
 		StringReplace, ReplacementText, ReplacementText, `%dm, %XDate%, All
 	}
+	IfInString,ReplacementText,`%dw
+	{
+		FormatTime, WDate, , yyyy-MM-dd
+		StringReplace, ReplacementText, ReplacementText, `%dw, %WDate%, All
+	}
 	IfInString,ReplacementText,`%dl
 	{
 		FormatTime, LDate, , LongDate
