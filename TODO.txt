@@ -1,2 +1,10 @@
 - Bugs:
   - Mouse incompatibility with Outlook?
+  - Crashes with following error when opening an RDP session on Win 7
+      Error: the following variable name contains an illegal character:
+      "not foundKeys"
+      
+      The current thread will exit.
+      
+              Line#
+      --->    174: Bank:= %Bank%
