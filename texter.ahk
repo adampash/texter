@@ -318,8 +318,8 @@ IfInString,ReplacementText,::scr::
 	}
 	IfInString,ReplacementText,`%s
 	{
-		StringReplace, ReplacementText, ReplacementText,`%s(, ¢, All
-		Loop,Parse,ReplacementText,¢
+		StringReplace, ReplacementText, ReplacementText,`%s(, ï¿½, All
+		Loop,Parse,ReplacementText,ï¿½
 		{
 			if (A_Index != 1)
 			{
@@ -364,6 +364,21 @@ else
 	{
 		FormatTime, SDate, , ShortDate
 		StringReplace, ReplacementText, ReplacementText, `%ds, %SDate%, All
+	}
+	IfInString,ReplacementText,`%dm
+	{
+		FormatTime, XDate, , MM/dd/yyyy
+		StringReplace, ReplacementText, ReplacementText, `%dm, %XDate%, All
+	}
+	IfInString,ReplacementText,`%dw
+	{
+		FormatTime, WDate, , yyyy-MM-dd
+		StringReplace, ReplacementText, ReplacementText, `%dw, %WDate%, All
+	}
+	IfInString,ReplacementText,`%dy
+	{
+		FormatTime, YDate, , yyyy
+		StringReplace, ReplacementText, ReplacementText, `%dy, %YDate%, All
 	}
 	IfInString,ReplacementText,`%dl
 	{
