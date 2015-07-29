@@ -1,2 +1,3 @@
 - Bugs:
   - Mouse incompatibility with Outlook?
+  - Date variables no longer work. Examples: %ds %dl
