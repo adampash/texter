@@ -10,7 +10,7 @@ Gui, Add, Edit, x20 y30 r1 W300 vInstallDir,%A_ProgramFiles%\Texter
 Gui, Add, Button,w80 GBrowse x320 y29,&Browse
 Gui, Add, Button,w80 default GInstall x225 yp+50,&Install
 Gui, Add, Button,w80 xp+90 GCancel,&Cancel
-Gui, Show, auto,Install Texter
+Gui, Show, AutoSize, Install Texter
 RETURN
 
 BROWSE:
@@ -35,7 +35,7 @@ if ErrorLevel = 0
 	Gui, Add, Text,y10 x10,Texter successfully installed!
 	Gui, Add, Checkbox, Checked y30 x20 vLaunch, Launch Texter
 	Gui, Add, Button,w80 default GAutoRun x300 yp+65,&Finish
-	Gui, Show, auto,Installation complete
+	Gui, Show, AutoSize,Installation complete
 }
 ;MsgBox, Installed
 
